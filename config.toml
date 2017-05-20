@@ -1,0 +1,73 @@
+languageCode = "en-us"
+title = "AntonioMO"
+baseurl = "http://antoniomo.com/"
+MetaDataFormat = "toml"
+theme = "hyde-x"
+# disqusShortname = "your_disqus_shortname" # Optional, enable Disqus integration
+paginate = 10
+
+[author]
+	name = "AntonioMO"
+
+[permalinks]
+	# Optional. Change the permalink format for the 'post' content type.
+	# The format shown here is the same one Jekyll/Octopress uses by default.
+	post = "/blog/:year/:month/:day/:title/"
+
+[taxonomies]
+	# Optional. Use if you want tags and lists.
+	category = "categories"
+	# tag = "tags"
+
+[params]
+	# If false display full article contents in blog index.  Otherwise show
+	# description and 'read on' link to individual blog post page.  Default
+	# (if omitted) is true.
+	truncate = true
+
+	# Used when a given page doesn't set its own.
+	defaultDescription = ""
+	defaultKeywords = "antonio,website,blog"
+
+	# Hide estimated reading time for posts.
+	# Default (if omitted) is false.
+	hideReadingTime = false
+
+	# Changes sidebar background and link/accent colours.
+	# See below for more colour options.
+	# This also works: "theme-base-08 layout-reverse", or just "layout-reverse".
+	theme = "theme-base-08"
+
+	# Select a syntax highight.
+	# Check the static/css/highlight directory for options.
+	highlight = "sunburst"
+
+	# Optional additional custom CSS file URL, will override other styles.
+	customCSS = ""
+
+	# Displays under the author name in the sidebar, keep it short.
+	# You can use markdown here.
+	tagline = "Learning stuff around, being myself :)"
+
+	# Text for the top menu link, which goes the root URL for the site.
+	# Default (if omitted) is "Blog".
+	home = "About Me"
+
+	# Metadata used to drive integrations.
+	# googleAnalytics = "Your Google Analytics tracking code"
+	# MD5 hash of your Gravatar email address
+	gravatarHash = "3c5ee5663d8001726a4f6e397f5c5e77"
+
+	# Sidebar social links, these must be full URLs.
+	github = "https://github.com/antoniomo"
+	bitbucket = ""
+	stackOverflow = "https://stackoverflow.com/users/189138/antoniomo"
+	linkedin = "https://www.linkedin.com/in/antoniomo/"
+	googleplus = ""
+	facebook = ""
+	twitter = "https://twitter.com/AMaciasOjeda"
+	youtube = ""
+
+	# Other social-like sidebar links
+	rss = true  # switch to true to enable RSS icon link
+	# flattr = ""  # populate with your flattr uid
