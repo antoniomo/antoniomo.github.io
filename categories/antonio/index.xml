@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Antonio on AntonioMO</title>
+    <link>http://antoniomo.com/categories/antonio/index.xml</link>
+    <description>Recent content in Antonio on AntonioMO</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <atom:link href="http://antoniomo.com/categories/antonio/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>About Me</title>
+      <link>http://antoniomo.com/</link>
+      <pubDate>Sat, 20 May 2017 09:30:39 +0300</pubDate>
+      
+      <guid>http://antoniomo.com/</guid>
+      <description>
+
+&lt;p&gt;Hi! My name is Antonio and I&amp;rsquo;m a software developer. I&amp;rsquo;m from &lt;a href=&#34;https://www.youtube.com/results?search_query=tenerife+time+lapse&#34;&gt;Tenerife,
+Spain&lt;/a&gt;, but
+now living in &lt;a href=&#34;https://www.youtube.com/results?search_query=finland+time+lapse&#34;&gt;Helsinki,
+Finland&lt;/a&gt;. Over
+the years I have lived and worked in Bilbao, Madrid, Brussels, Montreal and San
+Francisco, and hold great memories of each place.&lt;/p&gt;
+
+&lt;p&gt;Professionally, I used to work on the backend side of things, but for some years
+I decided to move into machine learning, even getting a MSc. on the topic.
+However, after a few years in and around that field I decided that pure backend
+engineering and distributed systems is what I enjoy doing the most, so nowadays
+I do that, almost exclusively in the Go language, but of course the occasional
+shell or python script is used as well. My tool set is Linux, Vim, Git, and a
+browser.&lt;/p&gt;
+
+&lt;p&gt;Personally, I enjoy cooking with or for friends, eating, board games, and doing
+exercise in the form of Judo and DaitoRyu, but I can be convinced to go on
+running or climbing as well.&lt;/p&gt;
+
+&lt;h1 id=&#34;contact&#34;&gt;Contact&lt;/h1&gt;
+
+&lt;p&gt;I usually hang around at the gophers slack under my @antoniomo handle. Other
+than that, for professional contact just contact me on my LinkedIn.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
