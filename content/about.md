@@ -2,6 +2,7 @@
 date = "2017-05-20T09:30:39+03:00"
 title = "About Me"
 description = "About Me"
+menu = "main"
 categories = [ "antonio", "about", "contact" ]
 keywords = [ "antonio", "about", "contact" ]
 
