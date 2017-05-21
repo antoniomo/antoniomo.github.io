@@ -20,7 +20,9 @@
 &lt;p&gt;Whenever we deal with entities in a software system, from user accounts to blog
 posts, it&amp;rsquo;s common to want to be able to refer to those with a unique,
 non-ambiguous identifier, sometimes also for database storage under a unique
-key. On this part we&amp;rsquo;ll discuss sequential &lt;em&gt;UIDs&lt;/em&gt; as an introduction to the
+key.&lt;/p&gt;
+
+&lt;p&gt;On this part we&amp;rsquo;ll discuss sequential &lt;em&gt;UIDs&lt;/em&gt; as an introduction to the
 topic, and afterwards we can start with more juicy and practical content on the
 rest of the series.&lt;/p&gt;
 
