@@ -88,13 +88,15 @@
 <p>Whenever we deal with entities in a software system, from user accounts to blog
 posts, it&rsquo;s common to want to be able to refer to those with a unique,
 non-ambiguous identifier, sometimes also for database storage under a unique
-key.</p>
+key. On this part we&rsquo;ll discuss sequential <em>UIDs</em> as an introduction to the
+topic, and afterwards we can start with more juicy and practical content on the
+rest of the series.</p>
 
 <h2 id="sequential-uids">Sequential UIDs</h2>
 
 <p>On basic systems, these <em>Unique Identifiers (UID)</em> could be just a sequential or
 incremental counter, where each new entity gets the next item in the sequence as
-it&rsquo;s ID. If the system is rebooted, it will have to store the last assigned ID,
+its ID. If the system is rebooted, it will have to store the last assigned ID,
 load it and keep on going.</p>
 
 <p>But what happens if our system has to deal with multiple new entities
