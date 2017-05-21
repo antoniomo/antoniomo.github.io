@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Unique IDs in Golang, part 1 &middot; AntonioMO</title>
+
+  
+  <link rel="stylesheet" href="http://antoniomo.com/css/poole.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/poole-overrides.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde-overrides.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde-x.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/highlight/sunburst.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://antoniomo.com/touch-icon-144-precomposed.png">
+  <link href="http://antoniomo.com/favicon.png" rel="icon">
+
+  
+  
+  
+  
+
+  <meta name="description" content="Introduction and sequential UIDs">
+  <meta name="keywords" content="programming,golang,uid">
+  
+</head>
+<body class="theme-base-08">
+<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      
+        <img src="https://www.gravatar.com/avatar/3c5ee5663d8001726a4f6e397f5c5e77?s=200"
+             alt="gravatar" title="AntonioMO">
+      
+      <h1>AntonioMO</h1>
+      <p class="lead">Learning stuff around, being myself :)</p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item"><a href="http://antoniomo.com/">Blog</a></li>
+      
+      <li class="sidebar-nav-item"><a href="/about/">About Me</a></li>
+      
+    </ul>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+      <a href="https://github.com/antoniomo"><i class="fa fa-github-square fa-3x"></i></a>
+      
+      <a href="https://stackoverflow.com/users/189138/antoniomo"><i class="fa fa-stack-overflow fa-3x"></i></a>
+      <a href="https://www.linkedin.com/in/antoniomo/"><i class="fa fa-linkedin-square fa-3x"></i></a>
+      
+      
+      <a href="https://twitter.com/AMaciasOjeda"><i class="fa fa-twitter-square fa-3x"></i></a>
+      
+      
+      <a href="http://antoniomo.com/index.xml" type="application/rss+xml"><i class="fa fa-rss-square fa-3x"></i></a>
+      </li>
+    </ul>
+
+    
+
+    <p>Copyright &copy; 2017 <a href="http://antoniomo.com/license/">License</a><br/>
+       Powered by <a href="http://gohugo.io">Hugo</a> and <a href="https://github.com/zyro/hyde-x">Hyde-X</a></p>
+  </div>
+</div>
+
+
+<div class="content container">
+  <div class="post">
+    <h1 class="post-title">Unique IDs in Golang, part 1</h1>
+    <span class="post-date">May 21, 2017 &middot; 3 minute read
+    
+    <br/>
+    <a class="label" href="http://antoniomo.com/categories/programming">programming</a><a class="label" href="http://antoniomo.com/categories/golang">golang</a><a class="label" href="http://antoniomo.com/categories/uid">uid</a>
+    </span>
+    
+
+<p>Whenever we deal with entities in a software system, from user accounts to blog
+posts, it&rsquo;s common to want to be able to refer to those with a unique,
+non-ambiguous identifier, sometimes also for database storage under a unique
+key.</p>
+
+<h2 id="sequential-uids">Sequential UIDs</h2>
+
+<p>On basic systems, these <em>Unique Identifiers (UID)</em> could be just a sequential or
+incremental counter, where each new entity gets the next item in the sequence as
+it&rsquo;s ID. If the system is rebooted, it will have to store the last assigned ID,
+load it and keep on going.</p>
+
+<p>But what happens if our system has to deal with multiple new entities
+concurrently? Do we keep this counter under a mutex to serialize the sequence
+generation? What if we have a distributed system and we have to create <em>UIDs</em> in
+parallel, without access to a shared counter, at least not without expensive
+network communications?</p>
+
+<p>In these situations, sticking to purely sequential counters imposes some
+limitations. For example, if we are going to operate on a single node, and/or we
+count on shared memory, a <em>mutex</em> or some other form of synchronization would
+work, at the cost of performance.</p>
+
+<p>We could improve this by having a series of <em>UID</em> generators. For example, if our
+expected concurrency is 8 workers, each one of them could have their own
+generator, starting separate counters on 1 to 8. Summing 8 would get their next
+sequence number without collisions.</p>
+
+<p>This schema would also work in a distributed system with a fixed (and known
+beforehand) number of nodes. We could even prefix it with a timestamp so that
+even if the generators advance at different speeds, the generated UIDs are
+somewhat sortable, at least within the
+<a href="https://en.wikipedia.org/wiki/Network_Time_Protocol">NTP</a> clock drift of each
+node, which is typically within the 10s of <em>ms</em>, although sometimes it can go up
+to half a second.</p>
+
+<p>What happens if we want to be able to add/remove nodes from our system? We could
+have a set number of nodes with a service that assigns the <em>UIDs</em>, and the other
+nodes just request new <em>UIDs</em> to those, but that imposes expensive network
+communications and is still an scalability bottleneck as adding more of these
+<em>UID</em> nodes isn&rsquo;t trivial.</p>
+
+<p>As we can see, <em>sequential UIDs</em> are perhaps not the best idea if we want to be
+able to flexibly add/remove nodes to a distributed system, and they quickly stop
+being <em>simple</em> when you want to deal with the above nuisances. Enter
+<em>random-UIDs</em>.</p>
+
+<h2 id="random-uids">Random UIDs</h2>
+
+<p>In these schema, the <em>UIDs</em> are just randomly assigned from a number space much
+bigger than the total number of entities we expect to handle in the entire
+lifespawn of our system. The bigger the <em>UID</em> number space with respect to the
+number of entities to be identified, the lower the probability of getting a
+duplicate, to the point that we can totally dismiss the possibility of having
+one, assuming a good quality random number generator.</p>
+
+<p>Perhaps the most well known, standard way to get a <em>UID</em> following this schema
+is the <em>Universally Unique Identifier (UUID)</em>, which will form the basis for
+part two, where we&rsquo;ll be describing the format, comparing some golang libraries
+to use it, and discussing why we might not want to use it all the time and some
+alternatives (some hints: <em>ordering, locality, wasteful representation</em>).</p>
+
+<p>Stay tuned!</p>
+
+<h2 id="references">References</h2>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Unique_identifier">Unique Identifier</a> Wikipedia article</li>
+<li><a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a> Wikipedia article</li>
+<li><a href="http://book.mixu.net/distsys/time.html">Distributed Systems for Fun and Profit</a> Good time and order discussion</li>
+</ul>
+
+  </div>
+  
+</div>
+
+
+
+
+<script src="http://antoniomo.com/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
+

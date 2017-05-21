@@ -2,7 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://antoniomo.com/</loc>
+    <loc>http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/</loc>
+    <lastmod>2017-05-21T07:46:32+03:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://antoniomo.com/about/</loc>
     <lastmod>2017-05-20T09:30:39+03:00</lastmod>
   </url>
   
@@ -19,6 +24,12 @@
   </url>
   
   <url>
+    <loc>http://antoniomo.com/</loc>
+    <lastmod>2017-05-21T07:46:32+03:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>http://antoniomo.com/categories/</loc>
     <priority>0</priority>
   </url>
@@ -26,6 +37,30 @@
   <url>
     <loc>http://antoniomo.com/categories/contact/</loc>
     <lastmod>2017-05-20T09:30:39+03:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://antoniomo.com/categories/golang/</loc>
+    <lastmod>2017-05-21T07:46:32+03:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://antoniomo.com/post/</loc>
+    <lastmod>2017-05-21T07:46:32+03:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://antoniomo.com/categories/programming/</loc>
+    <lastmod>2017-05-21T07:46:32+03:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://antoniomo.com/categories/uid/</loc>
+    <lastmod>2017-05-21T07:46:32+03:00</lastmod>
     <priority>0</priority>
   </url>
   

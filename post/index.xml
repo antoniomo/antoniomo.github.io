@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>AntonioMO</title>
-    <link>http://antoniomo.com/index.xml</link>
-    <description>Recent content on AntonioMO</description>
+    <title>Posts on AntonioMO</title>
+    <link>http://antoniomo.com/post/index.xml</link>
+    <description>Recent content in Posts on AntonioMO</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 21 May 2017 07:46:32 +0300</lastBuildDate>
-    <atom:link href="http://antoniomo.com/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://antoniomo.com/post/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Unique IDs in Golang, part 1</title>
@@ -88,43 +88,6 @@ alternatives (some hints: &lt;em&gt;ordering, locality, wasteful representation&
 &lt;li&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Universally_unique_identifier&#34;&gt;UUID&lt;/a&gt; Wikipedia article&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://book.mixu.net/distsys/time.html&#34;&gt;Distributed Systems for Fun and Profit&lt;/a&gt; Good time and order discussion&lt;/li&gt;
 &lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>About Me</title>
-      <link>http://antoniomo.com/about/</link>
-      <pubDate>Sat, 20 May 2017 09:30:39 +0300</pubDate>
-      
-      <guid>http://antoniomo.com/about/</guid>
-      <description>
-
-&lt;p&gt;Hi!&lt;/p&gt;
-
-&lt;p&gt;My name is Antonio and I&amp;rsquo;m a software developer. I&amp;rsquo;m from &lt;a href=&#34;https://www.youtube.com/results?search_query=tenerife+time+lapse&#34;&gt;Tenerife,
-Spain&lt;/a&gt;, but
-now living in &lt;a href=&#34;https://www.youtube.com/results?search_query=finland+time+lapse&#34;&gt;Helsinki,
-Finland&lt;/a&gt;. Over
-the years I have lived and worked in Bilbao, Madrid, Brussels, Montreal and San
-Francisco, and hold great memories of each place.&lt;/p&gt;
-
-&lt;p&gt;Professionally, I used to work on the backend side of things, but for some years
-I decided to move into machine learning, getting a MSc. on the topic.  However,
-after a few years in and around that field I decided that pure backend
-engineering and distributed systems is what I enjoy doing the most, so nowadays
-I do that. I use the Go language whenever possible, but of course the occasional
-shell or python script is useful as well. My tool set is Linux, i3 with a bunch
-of terminals, Vim, Git, and a browser.&lt;/p&gt;
-
-&lt;p&gt;Personally, I enjoy cooking with or for friends, eating, board games, and doing
-exercise in the form of martial arts, but I can be convinced to go on running or
-climbing as well.&lt;/p&gt;
-
-&lt;h1 id=&#34;contact&#34;&gt;Contact&lt;/h1&gt;
-
-&lt;p&gt;I usually hang around at the &lt;a href=&#34;https://gophers.slack.com&#34;&gt;gophers slack&lt;/a&gt; under my
-&lt;code&gt;@antoniomo&lt;/code&gt; handle. Other than that, for professional contact just contact me on
-my &lt;a href=&#34;https://www.linkedin.com/in/antoniomo/&#34;&gt;LinkedIn&lt;/a&gt;.&lt;/p&gt;
 </description>
     </item>
     
