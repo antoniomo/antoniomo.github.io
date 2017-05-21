@@ -9,7 +9,9 @@ description = "Introduction and sequential UIDs"
 Whenever we deal with entities in a software system, from user accounts to blog
 posts, it's common to want to be able to refer to those with a unique,
 non-ambiguous identifier, sometimes also for database storage under a unique
-key. On this part we'll discuss sequential *UIDs* as an introduction to the
+key.
+
+On this part we'll discuss sequential *UIDs* as an introduction to the
 topic, and afterwards we can start with more juicy and practical content on the
 rest of the series.
 
