@@ -142,8 +142,8 @@ my &lt;a href=&#34;https://www.linkedin.com/in/antoniomo/&#34;&gt;LinkedIn&lt;/a
 
 &lt;p&gt;&lt;center&gt;&lt;a rel=&#34;license&#34; href=&#34;http://creativecommons.org/licenses/by/4.0/&#34;&gt;&lt;img alt=&#34;Creative Commons License&#34; style=&#34;border-width:0&#34; src=&#34;https://i.creativecommons.org/l/by/4.0/88x31.png&#34; /&gt;&lt;/a&gt;&lt;br /&gt;This work is licensed under a &lt;a rel=&#34;license&#34; href=&#34;http://creativecommons.org/licenses/by/4.0/&#34;&gt;Creative Commons Attribution 4.0 International License&lt;/a&gt;&lt;/center&gt;&lt;/p&gt;
 
-&lt;p&gt;All software snippets published on this blog are under the following license,
-unless otherwise explicitly stated:&lt;/p&gt;
+&lt;p&gt;All source code published on this blog is under the following license, unless
+otherwise explicitly stated:&lt;/p&gt;
 
 &lt;blockquote&gt;
 &lt;p&gt;MIT License&lt;/p&gt;
