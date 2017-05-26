@@ -17,35 +17,44 @@
       <guid>http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/</guid>
       <description>
 
-&lt;p&gt;Whenever we deal with entities in a software system, from user accounts to blog
-posts, it&amp;rsquo;s common to want to be able to refer to those with a unique,
-non-ambiguous identifier, sometimes also for database storage under a unique
-key.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is a continuing series on &lt;em&gt;UID&lt;/em&gt; alternatives:&lt;/p&gt;
 
-&lt;p&gt;On this part we&amp;rsquo;ll discuss sequential &lt;em&gt;UIDs&lt;/em&gt; as an introduction to the
-topic, and afterwards we can start with more juicy and practical content on the
-rest of the series.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/&#34;&gt;Part1&lt;/a&gt; Introduces the topic (this post)&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;No page found with path or logical name &#34;post/id2.md&#34;.
+&#34;&gt;Part2&lt;/a&gt; Talks about &lt;em&gt;UUID&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Whenever we deal with entities in a software system, from user accounts to blog
+posts, or even to generate a database key, it&amp;rsquo;s common to want to be able to
+refer to those with a unique, non-ambiguous identifier.&lt;/p&gt;
+
+&lt;p&gt;On this part we&amp;rsquo;ll discuss sequential &lt;em&gt;UIDs&lt;/em&gt; as an introduction to the topic,
+and afterwards we can start with more juicy and practical content on the rest
+of the series.&lt;/p&gt;
 
 &lt;h2 id=&#34;sequential-uids&#34;&gt;Sequential UIDs&lt;/h2&gt;
 
-&lt;p&gt;On basic systems, these &lt;em&gt;Unique Identifiers (UID)&lt;/em&gt; could be just a sequential or
-incremental counter, where each new entity gets the next item in the sequence as
-its ID. If the system is rebooted, it will have to store the last assigned ID,
-load it and keep on going.&lt;/p&gt;
+&lt;p&gt;On basic systems, these &lt;em&gt;Unique Identifiers (UID)&lt;/em&gt; could be just a sequential
+or incremental counter, where each new entity gets the next item in the
+sequence as its ID. If the system is rebooted, it will first have to store the
+last assigned ID, load it and keep on going.&lt;/p&gt;
 
 &lt;p&gt;But what happens if our system has to deal with multiple new entities
 concurrently? Do we keep this counter under a mutex to serialize the sequence
-generation? What if we have a distributed system and we have to create &lt;em&gt;UIDs&lt;/em&gt; in
-parallel, without access to a shared counter, at least not without expensive
+generation? What if we have a distributed system and we have to create &lt;em&gt;UIDs&lt;/em&gt;
+in parallel, without access to a shared counter, at least not without expensive
 network communications?&lt;/p&gt;
 
 &lt;p&gt;In these situations, sticking to purely sequential counters imposes some
-limitations. For example, if we are going to operate on a single node, and/or we
-count on shared memory, a &lt;em&gt;mutex&lt;/em&gt; or some other form of synchronization would
-work, at the cost of performance.&lt;/p&gt;
+limitations. For example, if we are going to operate on a single node, and/or
+we count on shared memory, a &lt;em&gt;mutex&lt;/em&gt; or some other form of synchronization
+would work, at the cost of performance.&lt;/p&gt;
 
-&lt;p&gt;We could improve this by having a series of &lt;em&gt;UID&lt;/em&gt; generators. For example, if our
-expected concurrency is 8 workers, each one of them could have their own
+&lt;p&gt;We could improve this by having a series of &lt;em&gt;UID&lt;/em&gt; generators. For example, if
+our expected concurrency is 8 workers, each one of them could have their own
 generator, starting separate counters on 1 to 8. Summing 8 would get their next
 sequence number without collisions.&lt;/p&gt;
 
@@ -54,18 +63,18 @@ beforehand) number of nodes. We could even prefix it with a timestamp so that
 even if the generators advance at different speeds, the generated UIDs are
 somewhat sortable, at least within the
 &lt;a href=&#34;https://en.wikipedia.org/wiki/Network_Time_Protocol&#34;&gt;NTP&lt;/a&gt; clock drift of each
-node, which is typically within the 10s of &lt;em&gt;ms&lt;/em&gt;, although sometimes it can go up
-to half a second.&lt;/p&gt;
+node, which is typically within the 10s of &lt;em&gt;ms&lt;/em&gt;, although sometimes it can go
+up to half a second.&lt;/p&gt;
 
-&lt;p&gt;What happens if we want to be able to add/remove nodes from our system? We could
-have a set number of nodes with a service that assigns the &lt;em&gt;UIDs&lt;/em&gt;, and the other
-nodes just request new &lt;em&gt;UIDs&lt;/em&gt; to those, but that imposes expensive network
-communications and is still an scalability bottleneck as adding more of these
-&lt;em&gt;UID&lt;/em&gt; nodes isn&amp;rsquo;t trivial.&lt;/p&gt;
+&lt;p&gt;What happens if we want to be able to add/remove nodes from our system? We
+could have a set number of nodes with a service that assigns the &lt;em&gt;UIDs&lt;/em&gt;, and
+the other nodes just request new &lt;em&gt;UIDs&lt;/em&gt; to those, but that imposes expensive
+network communications and is still an scalability bottleneck as adding more of
+these &lt;em&gt;UID&lt;/em&gt; nodes isn&amp;rsquo;t trivial.&lt;/p&gt;
 
 &lt;p&gt;As we can see, &lt;em&gt;sequential UIDs&lt;/em&gt; are perhaps not the best idea if we want to be
-able to flexibly add/remove nodes to a distributed system, and they quickly stop
-being &lt;em&gt;simple&lt;/em&gt; when you want to deal with the above nuisances. Enter
+able to flexibly add/remove nodes to a distributed system, and they quickly
+stop being &lt;em&gt;simple&lt;/em&gt; when you want to deal with the above nuisances. Enter
 &lt;em&gt;random-UIDs&lt;/em&gt;.&lt;/p&gt;
 
 &lt;h2 id=&#34;random-uids&#34;&gt;Random UIDs&lt;/h2&gt;
@@ -73,8 +82,8 @@ being &lt;em&gt;simple&lt;/em&gt; when you want to deal with the above nuisances
 &lt;p&gt;In these schema, the &lt;em&gt;UIDs&lt;/em&gt; are just randomly assigned from a number space much
 bigger than the total number of entities we expect to handle in the entire
 lifespawn of our system. The bigger the &lt;em&gt;UID&lt;/em&gt; number space with respect to the
-number of entities to be identified, the lower the probability of getting a
-duplicate, to the point that we can totally dismiss the possibility of having
+number of entities to be identified, the lower the probability of getting
+a duplicate, to the point that we can totally dismiss the possibility of having
 one, assuming a good quality random number generator.&lt;/p&gt;
 
 &lt;p&gt;Perhaps the most well known, standard way to get a &lt;em&gt;UID&lt;/em&gt; following this schema
