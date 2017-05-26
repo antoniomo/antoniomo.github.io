@@ -3,8 +3,10 @@ title = "AntonioMO"
 baseurl = "http://antoniomo.com/"
 MetaDataFormat = "toml"
 theme = "hyde-x"
-# disqusShortname = "your_disqus_shortname" # Optional, enable Disqus integration
+disqusShortname = "antoniomo.disqus.com"
 paginate = 10
+pygmentsCodeFences = true
+pygmentsStyle = "monokai"
 
 [author]
 	name = "AntonioMO"
@@ -40,7 +42,7 @@ paginate = 10
 
 	# Select a syntax highight.
 	# Check the static/css/highlight directory for options.
-	highlight = "sunburst"
+	# highlight = ""
 
 	# Optional additional custom CSS file URL, will override other styles.
 	customCSS = ""
