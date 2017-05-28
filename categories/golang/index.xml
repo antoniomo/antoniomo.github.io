@@ -9,6 +9,306 @@
     <atom:link href="http://antoniomo.com/categories/golang/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Unique IDs in Golang, part 2</title>
+      <link>http://antoniomo.com/blog/2017/05/28/unique-ids-in-golang-part-2/</link>
+      <pubDate>Sun, 28 May 2017 10:09:26 +0300</pubDate>
+      
+      <guid>http://antoniomo.com/blog/2017/05/28/unique-ids-in-golang-part-2/</guid>
+      <description>
+
+&lt;blockquote&gt;
+&lt;p&gt;This is a continuing series on &lt;em&gt;UID&lt;/em&gt; alternatives:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/&#34;&gt;Part1&lt;/a&gt; Introduces the topic&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://antoniomo.com/blog/2017/05/28/unique-ids-in-golang-part-2/&#34;&gt;Part2&lt;/a&gt; Talks about &lt;em&gt;UUID&lt;/em&gt; (this post)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;em&gt;Universal Unique Identifiers (UUID)&lt;/em&gt; are an standard way of generating and
+representing 128-bit numbers to be used as identifiers.&lt;/p&gt;
+
+&lt;p&gt;The standard &lt;a href=&#34;https://tools.ietf.org/html/rfc4122&#34;&gt;RFC 4122&lt;/a&gt; defines a way to
+represent these 128 bits in a string of 32 hexadecimal digits, separated with
+dashes in this arrangement &lt;code&gt;8-4-4-4-12&lt;/code&gt;, looking like:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;12345678-1234-V234-v234-123456789abc&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Taking a total of 36 characters. The two positions we have marked with &lt;code&gt;V&lt;/code&gt; and
+&lt;code&gt;v&lt;/code&gt; in the example have a special meaning:&lt;/p&gt;
+
+&lt;p&gt;The three most significant bits of &lt;code&gt;V&lt;/code&gt; denote the &lt;em&gt;UUID&lt;/em&gt; variant. The &lt;em&gt;RFC&lt;/em&gt;
+specifies 3:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Variant 0 is obsolete.&lt;/li&gt;
+&lt;li&gt;Variant 1 is the most commonly used.&lt;/li&gt;
+&lt;li&gt;Variant 2 was used for &lt;em&gt;GUIDs&lt;/em&gt; in the early Windows versions and is reserved
+for that.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Both V1/V2 are the same except for the &lt;code&gt;V&lt;/code&gt; value and the
+&lt;a href=&#34;https://en.wikipedia.org/wiki/Endianness&#34;&gt;endianness&lt;/a&gt; in byte representation,
+Variant 1 uses little-endian, variant 2, big-endian.&lt;/p&gt;
+
+&lt;p&gt;The 4 most significant bits of &lt;code&gt;v&lt;/code&gt; denotes the &lt;em&gt;UUID&lt;/em&gt; version. Both variants
+support 5 versions of &lt;em&gt;UUIDs&lt;/em&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Type 1 concatenates the unique &lt;a href=&#34;https://en.wikipedia.org/wiki/MAC_address&#34;&gt;MAC
+address&lt;/a&gt; of the generating node
+with a 60-bit timestamp, corresponding to a single point of time and space and
+thus deemed unique. It&amp;rsquo;s however a security concern as the &lt;code&gt;MAC&lt;/code&gt; address can
+be traced to the generating node&lt;/li&gt;
+&lt;li&gt;Type 2 is similar to type 1, but the timestamp is truncated to accommodate a
+&amp;ldquo;local domain&amp;rdquo; number, representing user ids, group ids, or the like. The
+reduced timestamp resolution means that type 2 is not suitable for cases were
+the &lt;em&gt;UUIDs&lt;/em&gt; are issued per node/domain at a rate exceeding 1 every 7 seconds&lt;/li&gt;
+&lt;li&gt;Type 3 deterministically hashes a predefined &lt;code&gt;name&lt;/code&gt; from a &lt;code&gt;namespace&lt;/code&gt; with
+&lt;code&gt;md5&lt;/code&gt; to get the &lt;em&gt;UUID&lt;/em&gt;. Not suitable for security credentials, but useful to
+assign an &lt;em&gt;UUID&lt;/em&gt; to some entity with an already unique name in another format&lt;/li&gt;
+&lt;li&gt;Type 5 as type 3, but uses &lt;code&gt;SHA1&lt;/code&gt; as the hash, preferable over type 3, but
+still not suitable for security credentials&lt;/li&gt;
+&lt;li&gt;Type 4 is completely random with 122 bits of entropy&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The meaning of each dash-separated section on the string representation varies
+on each version.&lt;/p&gt;
+
+&lt;p&gt;Because type 4 is the most flexible, falling in the &lt;em&gt;Random UID&lt;/em&gt; category that
+we outlined in &lt;a href=&#34;http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/&#34;&gt;part 1&lt;/a&gt;, we are gonna center the
+examples on that version.&lt;/p&gt;
+
+&lt;h2 id=&#34;golang-rng&#34;&gt;Golang RNG&lt;/h2&gt;
+
+&lt;p&gt;Before comparing particular &lt;em&gt;UUID&lt;/em&gt; packages, it&amp;rsquo;s interesting to point out that
+there are two ways to generate random numbers in the &lt;em&gt;Golang&lt;/em&gt; standard library,
+&lt;a href=&#34;https://golang.org/pkg/crypto/rand/&#34;&gt;crypto/rand&lt;/a&gt; and
+&lt;a href=&#34;https://golang.org/pkg/math/rand/&#34;&gt;math/rand&lt;/a&gt;. Without entering into details,
+the main difference is that &lt;code&gt;crypto/rand&lt;/code&gt; uses a cryptographically secure source
+of entropy from the operating system (&lt;code&gt;/dev/urandom&lt;/code&gt;) if available, or falls
+back to a cryptographically secure algorithm for generating random values. This
+involves system calls and isn&amp;rsquo;t fast. In contrast, &lt;code&gt;math/rand&lt;/code&gt; uses a faster
+algorithm, but even when properly seeded it isn&amp;rsquo;t suitable for security-related
+uses. Since &lt;em&gt;UUID&lt;/em&gt; are based on good-quality randomness, &lt;code&gt;crypto/rand&lt;/code&gt; is the
+logical choice for most packages, but some use cases might prefer a faster
+approach.&lt;/p&gt;
+
+&lt;p&gt;Also note that it is possible to use some
+&lt;a href=&#34;http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/&#34;&gt;strategies&lt;/a&gt;
+to get the most of &lt;code&gt;crypto/rand&lt;/code&gt;, and that naive usage of &lt;code&gt;math/rand&lt;/code&gt; &lt;a href=&#34;http://blog.sgmansfield.com/2016/01/the-hidden-dangers-of-default-rand/&#34;&gt;isn&amp;rsquo;t
+optimal&lt;/a&gt;,
+specially in concurrent scenarios, which are the norm in most non-trivial
+&lt;em&gt;Golang&lt;/em&gt; projects.&lt;/p&gt;
+
+&lt;h2 id=&#34;golang-uuid-packages&#34;&gt;Golang &lt;em&gt;UUID&lt;/em&gt; packages&lt;/h2&gt;
+
+&lt;p&gt;By far, the most popular package for handling &lt;em&gt;UUID&lt;/em&gt; in &lt;em&gt;Golang&lt;/em&gt; is
+&lt;a href=&#34;https://github.com/satori/go.uuid&#34;&gt;satori/go.uuid&lt;/a&gt;, with 1136 stars on &lt;em&gt;Github&lt;/em&gt;
+at the time of writing. It supports the five &lt;em&gt;UUID&lt;/em&gt; versions, it&amp;rsquo;s well tested
+and documented. This package uses &lt;code&gt;crypto/rand&lt;/code&gt; to generate the random bits so
+it&amp;rsquo;s as secure as it can be, but I couldn&amp;rsquo;t see how to specify my own source of
+entropy so it&amp;rsquo;s not easy to get more performance if needed.&lt;/p&gt;
+
+&lt;p&gt;A contender that is also well tested and RFC-compliant is
+&lt;a href=&#34;https://github.com/pborman/uuid&#34;&gt;pborman/uuid&lt;/a&gt;. It also uses
+&lt;code&gt;crypto/rand&lt;/code&gt; under the hood, but it includes a
+&lt;code&gt;func SetRand(io.Reader)&lt;/code&gt; function to easily set our own source of
+entropy, potentially enabling us to get more performance or fine-tune it
+for particular scenarios were &lt;code&gt;math/rand&lt;/code&gt; is acceptable and we want more
+speed.&lt;/p&gt;
+
+&lt;p&gt;With both packages claiming &lt;em&gt;RFC&lt;/em&gt; compliance and being well tested, let&amp;rsquo;s
+center the comparison on performance, as for some systems generating and
+parsing identifiers is part of the core functionality, so the format
+being equal, this could be the deciding factor on which package to use.&lt;/p&gt;
+
+&lt;h3 id=&#34;generating-performance&#34;&gt;Generating Performance&lt;/h3&gt;
+
+&lt;p&gt;For this test we&amp;rsquo;ll be generating random, version 4 &lt;em&gt;UUID&lt;/em&gt;. We&amp;rsquo;ll use this
+benchmark &lt;a href=&#34;files/uuid_generating_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
+
+  &lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
+      &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;math/rand&amp;quot;&lt;/span&gt;
+      &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;testing&amp;quot;&lt;/span&gt;
+
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;github.com/pborman/uuid&amp;quot;&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;satori&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;github.com/satori/go.uuid&amp;quot;&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkSatoriV4&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;satori&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NewV4&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkPbormanV4&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NewRandom&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkPbormanV4MathRand&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;rsource&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;rand&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;New&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;rand&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NewSource&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;))&lt;/span&gt; &lt;span style=&#34;color: #75715e&#34;&gt;// Unsafe concurrent use!&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SetRand&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;rsource&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NewRandom&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Running with &lt;code&gt;go test uuid_generating_test.go -bench=.&lt;/code&gt; gives us:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkSatoriV4-8&lt;/span&gt;              &lt;span style=&#34;color: #ae81ff&#34;&gt;3000000&lt;/span&gt;           &lt;span style=&#34;color: #ae81ff&#34;&gt;497&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkPbormanV4-8&lt;/span&gt;             &lt;span style=&#34;color: #ae81ff&#34;&gt;3000000&lt;/span&gt;           &lt;span style=&#34;color: #ae81ff&#34;&gt;499&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkPbormanV4MathRand-8&lt;/span&gt;    &lt;span style=&#34;color: #ae81ff&#34;&gt;20000000&lt;/span&gt;            &lt;span style=&#34;color: #ae81ff&#34;&gt;72.6&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;In their default mode, they have pretty much the same performance, which makes
+sense, but &lt;code&gt;pborman/uuid&lt;/code&gt; can be more customizable. For the shake of comparison,
+I used a &lt;code&gt;math/rand&lt;/code&gt; &lt;em&gt;RNG&lt;/em&gt; without any &lt;em&gt;mutex&lt;/em&gt;, so really fast, naive, and
+unsafe for concurrent use, but this could be ok having a separate &lt;em&gt;RNG&lt;/em&gt; per
+goroutine or connection, or using a
+&lt;a href=&#34;https://golang.org/pkg/sync/#Pool&#34;&gt;sync/pool&lt;/a&gt;, so it&amp;rsquo;s still a useful
+benchmark.&lt;/p&gt;
+
+&lt;h3 id=&#34;to-from-string-performance&#34;&gt;To/From string performance&lt;/h3&gt;
+
+&lt;p&gt;Another typical usage is to marshal/unmarshal &lt;em&gt;UUIDs&lt;/em&gt; to/from string, for
+example to save them into text files, logs, or databases.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s benchmark the two contenders for this common use case with this
+&lt;a href=&#34;files/uuid_string_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
+
+  &lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
+      &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;testing&amp;quot;&lt;/span&gt;
+
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;github.com/pborman/uuid&amp;quot;&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;satori&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;github.com/satori/go.uuid&amp;quot;&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;var&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;pbormanUUID&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NewRandom&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;satoriUUID&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;satori&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NewV4&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #a6e22e&#34;&gt;UUIDstring&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;satoriUUID&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkSatoriToString&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;_&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;satoriUUID&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkPbormanToString&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;_&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;pbormanUUID&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;()&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkSatoriFromString&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;satori&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;FromString&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;UUIDstring&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;BenchmarkPbormanFromString&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testing&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;B&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;N&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Parse&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;UUIDstring&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Again running with &lt;code&gt;go test uuid_string_test.go -bench=.&lt;/code&gt; gives us:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkSatoriToString-8&lt;/span&gt;       &lt;span style=&#34;color: #ae81ff&#34;&gt;20000000&lt;/span&gt;            &lt;span style=&#34;color: #ae81ff&#34;&gt;95.2&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkPbormanToString-8&lt;/span&gt;      &lt;span style=&#34;color: #ae81ff&#34;&gt;20000000&lt;/span&gt;            &lt;span style=&#34;color: #ae81ff&#34;&gt;92.0&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkSatoriFromString-8&lt;/span&gt;     &lt;span style=&#34;color: #ae81ff&#34;&gt;10000000&lt;/span&gt;           &lt;span style=&#34;color: #ae81ff&#34;&gt;142&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkPbormanFromString-8&lt;/span&gt;    &lt;span style=&#34;color: #ae81ff&#34;&gt;20000000&lt;/span&gt;            &lt;span style=&#34;color: #ae81ff&#34;&gt;62.1&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Seems like parsing an &lt;em&gt;UUID&lt;/em&gt; to a string is roughly equivalent, but
+&lt;code&gt;satori/go.uuid&lt;/code&gt; is &lt;em&gt;2x&lt;/em&gt; slower than &lt;code&gt;pborman/uuid&lt;/code&gt; when parsing from a string.&lt;/p&gt;
+
+&lt;p&gt;The culprit seems to be the function
+&lt;a href=&#34;https://github.com/satori/go.uuid/blob/0aa62d5ddceb50dbcb909d790b5345affd3669b6/uuid.go#L230-L283&#34;&gt;UnmarshalText&lt;/a&gt;
+which, among other things, supports an extra &lt;em&gt;UUID&lt;/em&gt; format, &lt;code&gt;{UUID}&lt;/code&gt; (sometimes
+used by &lt;em&gt;Microsoft GUIDs&lt;/em&gt;) that &lt;code&gt;pborman/uuid&lt;/code&gt;
+&lt;a href=&#34;https://github.com/pborman/uuid/blob/5b6ed1dd754eea46be2ec69c6e3f34fd4da85180/uuid.go#L57-L86&#34;&gt;Parse&lt;/a&gt;
+doesn&amp;rsquo;t, thus doing less work. But, what if we need that format? Using
+&lt;code&gt;pborman/uuid&lt;/code&gt; would require code like this:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #66d9ef&#34;&gt;func&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;withBraceParse&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;string&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;UUID&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;#39;{&amp;#39;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;{&lt;/span&gt;
+          &lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;]&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;pborman&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Parse&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Which, when benchmarked with this &lt;a href=&#34;files/uuid_bracestring_test.go&#34;&gt;code&lt;/a&gt;
+is still much faster than &lt;code&gt;satori/go.uuid&lt;/code&gt; for this operation:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkSatoriFromBraceString-8&lt;/span&gt;        &lt;span style=&#34;color: #ae81ff&#34;&gt;10000000&lt;/span&gt;           &lt;span style=&#34;color: #ae81ff&#34;&gt;135&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkPbormanFromBraceString-8&lt;/span&gt;       &lt;span style=&#34;color: #ae81ff&#34;&gt;20000000&lt;/span&gt;            &lt;span style=&#34;color: #ae81ff&#34;&gt;70.2&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;So the need to support that format isn&amp;rsquo;t a selling point for
+&lt;code&gt;satori/go.uuid&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In conclusion, for easy of use, start with &lt;code&gt;satori/go.uuid&lt;/code&gt;. However if
+you want more performance or customization, &lt;code&gt;pborman/uuid&lt;/code&gt; seems to be
+the way to go.&lt;/p&gt;
+
+&lt;h2 id=&#34;shortcomings-of-uuid&#34;&gt;Shortcomings of UUID.&lt;/h2&gt;
+
+&lt;p&gt;While &lt;em&gt;UUID&lt;/em&gt; usage is widespread, it isn&amp;rsquo;t without shortcomings:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Sections are hard to parse for a human and are &lt;em&gt;UUID&lt;/em&gt; version dependent. If we
+can&amp;rsquo;t directly interpret each section, the dashes on the string representation
+add no value&lt;/li&gt;
+&lt;li&gt;If we only care about an unique variant/version, we wouldn&amp;rsquo;t need to encode
+the rest&lt;/li&gt;
+&lt;li&gt;Having to support more variants and versions, the parsing and generation is
+slower than it could be&lt;/li&gt;
+&lt;li&gt;Version 4, being fully random, produces fragmentation in many data structures,
+and aren&amp;rsquo;t sortable in a meaningful way&lt;/li&gt;
+&lt;li&gt;Version 4 are slow to generate, requiring 122 bits of good quality entropy&lt;/li&gt;
+&lt;li&gt;It&amp;rsquo;s just not the most efficient way to encode 128 bits into a string. For
+example, &lt;a href=&#34;https://en.wikipedia.org/wiki/Base64&#34;&gt;base64&lt;/a&gt; without padding would
+require 22 characters, not 36&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;uuid-alternatives&#34;&gt;UUID Alternatives&lt;/h2&gt;
+
+&lt;p&gt;Tackling &lt;em&gt;UUID&lt;/em&gt; shortcomings, while still being simple and random-generated
+&lt;em&gt;UIDs&lt;/em&gt;, the most popular alternative is perhaps
+&lt;a href=&#34;https://github.com/alizain/ulid&#34;&gt;ULID&lt;/a&gt;, and a discussion of the format with
+comparison of &lt;em&gt;Golang&lt;/em&gt; libraries implementing it will be part three.&lt;/p&gt;
+
+&lt;p&gt;Hybrid sequential + random &lt;em&gt;UID&lt;/em&gt; systems can offer even better performance by
+reducing the amount of entropy needed for each single &lt;em&gt;UID&lt;/em&gt;, at the cost of
+being more complex to setup and operate. A popular system using this schema is
+Twitter&amp;rsquo;s &lt;a href=&#34;https://github.com/twitter/snowflake&#34;&gt;Snowflake&lt;/a&gt;. We&amp;rsquo;ll be discussing
+an &lt;a href=&#34;https://github.com/twitter/snowflake&#34;&gt;Snowflake&lt;/a&gt; alternative,
+&lt;a href=&#34;https://github.com/bmizerany/noeqd&#34;&gt;noeqd&lt;/a&gt;, and it&amp;rsquo;s &lt;em&gt;Golang&lt;/em&gt; library, in part
+4.&lt;/p&gt;
+
+&lt;h2 id=&#34;references&#34;&gt;References&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Universally_unique_identifier&#34;&gt;UUID&lt;/a&gt; Wikipedia article&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://tools.ietf.org/html/rfc4122&#34;&gt;RFC 4122&lt;/a&gt; &lt;em&gt;UUID RFC&lt;/em&gt; document&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/&#34;&gt;Managing Syscall Overhead with
+crypto/rand&lt;/a&gt;
+is an excellent blog post on how to get better performance from
+&lt;code&gt;crypto/rand&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://blog.sgmansfield.com/2016/01/the-hidden-dangers-of-default-rand/&#34;&gt;The hidden dangers of default
+rand&lt;/a&gt;
+another excellent post, this time about &lt;code&gt;math/rand&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Unique IDs in Golang, part 1</title>
       <link>http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/</link>
       <pubDate>Sun, 21 May 2017 07:46:32 +0300</pubDate>
@@ -21,8 +321,7 @@
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://antoniomo.com/blog/2017/05/21/unique-ids-in-golang-part-1/&#34;&gt;Part1&lt;/a&gt; Introduces the topic (this post)&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;No page found with path or logical name &#34;post/id2.md&#34;.
-&#34;&gt;Part2&lt;/a&gt; Talks about &lt;em&gt;UUID&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://antoniomo.com/blog/2017/05/28/unique-ids-in-golang-part-2/&#34;&gt;Part2&lt;/a&gt; Talks about &lt;em&gt;UUID&lt;/em&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
 

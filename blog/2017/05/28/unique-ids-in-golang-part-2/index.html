@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Unique IDs in Golang, part 2 &middot; AntonioMO</title>
+
+  
+  <link rel="stylesheet" href="http://antoniomo.com/css/poole.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/poole-overrides.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde-overrides.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde-x.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/override.css">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://antoniomo.com/touch-icon-144-precomposed.png">
+  <link href="http://antoniomo.com/favicon.png" rel="icon">
+
+  
+  
+  
+  
+
+  <meta name="description" content="UUIDs discussion and drawbacks">
+  <meta name="keywords" content="programming,golang,uid,uuid">
+  
+</head>
+<body class="theme-base-08">
+<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      
+        <img src="https://www.gravatar.com/avatar/3c5ee5663d8001726a4f6e397f5c5e77?s=200"
+             alt="gravatar" title="AntonioMO">
+      
+      <h1>AntonioMO</h1>
+      <p class="lead">Learning stuff around, being myself :)</p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item"><a href="http://antoniomo.com/">Blog</a></li>
+      
+      <li class="sidebar-nav-item"><a href="/about/">About Me</a></li>
+      
+    </ul>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+      <a href="https://github.com/antoniomo"><i class="fa fa-github-square fa-3x"></i></a>
+      
+      <a href="https://stackoverflow.com/users/189138/antoniomo"><i class="fa fa-stack-overflow fa-3x"></i></a>
+      <a href="https://www.linkedin.com/in/antoniomo/"><i class="fa fa-linkedin-square fa-3x"></i></a>
+      
+      
+      <a href="https://twitter.com/AMaciasOjeda"><i class="fa fa-twitter-square fa-3x"></i></a>
+      
+      
+      <a href="http://antoniomo.com/index.xml" type="application/rss+xml"><i class="fa fa-rss-square fa-3x"></i></a>
+      </li>
+    </ul>
+
+    
+
+    <p>Copyright &copy; 2017 <a href="http://antoniomo.com/license/">License</a><br/>
+       Powered by <a href="http://gohugo.io">Hugo</a> and <a href="https://github.com/zyro/hyde-x">Hyde-X</a></p>
+  </div>
+</div>
+
+
+<div class="content container">
+  <div class="post">
+    <h1 class="post-title">Unique IDs in Golang, part 2</h1>
+    <span class="post-date">May 28, 2017 &middot; 7 minute read &middot; <a href="http://antoniomo.com/blog/2017/05/28/unique-ids-in-golang-part-2/#disqus_thread">Comments</a>
+    
+    <br/>
+    <a class="label" href="http://antoniomo.com/categories/programming">programming</a><a class="label" href="http://antoniomo.com/categories/golang">golang</a><a class="label" href="http://antoniomo.com/categories/uid">uid</a><a class="label" href="http://antoniomo.com/categories/uuid">uuid</a>
+    </span>
+    
+
+<blockquote>
+<p>This is a continuing series on <em>UID</em> alternatives:</p>
+
+<ul>
+<li><a href="/blog/2017/05/21/unique-ids-in-golang-part-1/">Part1</a> Introduces the topic</li>
+<li><a href="/blog/2017/05/28/unique-ids-in-golang-part-2/">Part2</a> Talks about <em>UUID</em> (this post)</li>
+</ul>
+</blockquote>
+
+<p><em>Universal Unique Identifiers (UUID)</em> are an standard way of generating and
+representing 128-bit numbers to be used as identifiers.</p>
+
+<p>The standard <a href="https://tools.ietf.org/html/rfc4122">RFC 4122</a> defines a way to
+represent these 128 bits in a string of 32 hexadecimal digits, separated with
+dashes in this arrangement <code>8-4-4-4-12</code>, looking like:</p>
+
+<p><code>12345678-1234-V234-v234-123456789abc</code></p>
+
+<p>Taking a total of 36 characters. The two positions we have marked with <code>V</code> and
+<code>v</code> in the example have a special meaning:</p>
+
+<p>The three most significant bits of <code>V</code> denote the <em>UUID</em> variant. The <em>RFC</em>
+specifies 3:</p>
+
+<ul>
+<li>Variant 0 is obsolete.</li>
+<li>Variant 1 is the most commonly used.</li>
+<li>Variant 2 was used for <em>GUIDs</em> in the early Windows versions and is reserved
+for that.</li>
+</ul>
+
+<p>Both V1/V2 are the same except for the <code>V</code> value and the
+<a href="https://en.wikipedia.org/wiki/Endianness">endianness</a> in byte representation,
+Variant 1 uses little-endian, variant 2, big-endian.</p>
+
+<p>The 4 most significant bits of <code>v</code> denotes the <em>UUID</em> version. Both variants
+support 5 versions of <em>UUIDs</em>:</p>
+
+<ul>
+<li>Type 1 concatenates the unique <a href="https://en.wikipedia.org/wiki/MAC_address">MAC
+address</a> of the generating node
+with a 60-bit timestamp, corresponding to a single point of time and space and
+thus deemed unique. It&rsquo;s however a security concern as the <code>MAC</code> address can
+be traced to the generating node</li>
+<li>Type 2 is similar to type 1, but the timestamp is truncated to accommodate a
+&ldquo;local domain&rdquo; number, representing user ids, group ids, or the like. The
+reduced timestamp resolution means that type 2 is not suitable for cases were
+the <em>UUIDs</em> are issued per node/domain at a rate exceeding 1 every 7 seconds</li>
+<li>Type 3 deterministically hashes a predefined <code>name</code> from a <code>namespace</code> with
+<code>md5</code> to get the <em>UUID</em>. Not suitable for security credentials, but useful to
+assign an <em>UUID</em> to some entity with an already unique name in another format</li>
+<li>Type 5 as type 3, but uses <code>SHA1</code> as the hash, preferable over type 3, but
+still not suitable for security credentials</li>
+<li>Type 4 is completely random with 122 bits of entropy</li>
+</ul>
+
+<p>The meaning of each dash-separated section on the string representation varies
+on each version.</p>
+
+<p>Because type 4 is the most flexible, falling in the <em>Random UID</em> category that
+we outlined in <a href="/blog/2017/05/21/unique-ids-in-golang-part-1/">part 1</a>, we are gonna center the
+examples on that version.</p>
+
+<h2 id="golang-rng">Golang RNG</h2>
+
+<p>Before comparing particular <em>UUID</em> packages, it&rsquo;s interesting to point out that
+there are two ways to generate random numbers in the <em>Golang</em> standard library,
+<a href="https://golang.org/pkg/crypto/rand/">crypto/rand</a> and
+<a href="https://golang.org/pkg/math/rand/">math/rand</a>. Without entering into details,
+the main difference is that <code>crypto/rand</code> uses a cryptographically secure source
+of entropy from the operating system (<code>/dev/urandom</code>) if available, or falls
+back to a cryptographically secure algorithm for generating random values. This
+involves system calls and isn&rsquo;t fast. In contrast, <code>math/rand</code> uses a faster
+algorithm, but even when properly seeded it isn&rsquo;t suitable for security-related
+uses. Since <em>UUID</em> are based on good-quality randomness, <code>crypto/rand</code> is the
+logical choice for most packages, but some use cases might prefer a faster
+approach.</p>
+
+<p>Also note that it is possible to use some
+<a href="http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/">strategies</a>
+to get the most of <code>crypto/rand</code>, and that naive usage of <code>math/rand</code> <a href="http://blog.sgmansfield.com/2016/01/the-hidden-dangers-of-default-rand/">isn&rsquo;t
+optimal</a>,
+specially in concurrent scenarios, which are the norm in most non-trivial
+<em>Golang</em> projects.</p>
+
+<h2 id="golang-uuid-packages">Golang <em>UUID</em> packages</h2>
+
+<p>By far, the most popular package for handling <em>UUID</em> in <em>Golang</em> is
+<a href="https://github.com/satori/go.uuid">satori/go.uuid</a>, with 1136 stars on <em>Github</em>
+at the time of writing. It supports the five <em>UUID</em> versions, it&rsquo;s well tested
+and documented. This package uses <code>crypto/rand</code> to generate the random bits so
+it&rsquo;s as secure as it can be, but I couldn&rsquo;t see how to specify my own source of
+entropy so it&rsquo;s not easy to get more performance if needed.</p>
+
+<p>A contender that is also well tested and RFC-compliant is
+<a href="https://github.com/pborman/uuid">pborman/uuid</a>. It also uses
+<code>crypto/rand</code> under the hood, but it includes a
+<code>func SetRand(io.Reader)</code> function to easily set our own source of
+entropy, potentially enabling us to get more performance or fine-tune it
+for particular scenarios were <code>math/rand</code> is acceptable and we want more
+speed.</p>
+
+<p>With both packages claiming <em>RFC</em> compliance and being well tested, let&rsquo;s
+center the comparison on performance, as for some systems generating and
+parsing identifiers is part of the core functionality, so the format
+being equal, this could be the deciding factor on which package to use.</p>
+
+<h3 id="generating-performance">Generating Performance</h3>
+
+<p>For this test we&rsquo;ll be generating random, version 4 <em>UUID</em>. We&rsquo;ll use this
+benchmark <a href="files/uuid_generating_test.go">code</a>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
+
+  <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
+      <span style="color: #e6db74">&quot;math/rand&quot;</span>
+      <span style="color: #e6db74">&quot;testing&quot;</span>
+
+      <span style="color: #a6e22e">pborman</span> <span style="color: #e6db74">&quot;github.com/pborman/uuid&quot;</span>
+      <span style="color: #a6e22e">satori</span> <span style="color: #e6db74">&quot;github.com/satori/go.uuid&quot;</span>
+  <span style="color: #f8f8f2">)</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkSatoriV4</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">satori</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewV4</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanV4</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewRandom</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanV4MathRand</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #a6e22e">rsource</span> <span style="color: #f92672">:=</span> <span style="color: #a6e22e">rand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">New</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">rand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewSource</span><span style="color: #f8f8f2">(</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">))</span> <span style="color: #75715e">// Unsafe concurrent use!</span>
+      <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">SetRand</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">rsource</span><span style="color: #f8f8f2">)</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewRandom</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+</pre></div>
+
+<p>Running with <code>go test uuid_generating_test.go -bench=.</code> gives us:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f8f8f2">BenchmarkSatoriV4-8</span>              <span style="color: #ae81ff">3000000</span>           <span style="color: #ae81ff">497</span> <span style="color: #f8f8f2">ns/op</span>
+  <span style="color: #f8f8f2">BenchmarkPbormanV4-8</span>             <span style="color: #ae81ff">3000000</span>           <span style="color: #ae81ff">499</span> <span style="color: #f8f8f2">ns/op</span>
+  <span style="color: #f8f8f2">BenchmarkPbormanV4MathRand-8</span>    <span style="color: #ae81ff">20000000</span>            <span style="color: #ae81ff">72.6</span> <span style="color: #f8f8f2">ns/op</span>
+</pre></div>
+
+<p>In their default mode, they have pretty much the same performance, which makes
+sense, but <code>pborman/uuid</code> can be more customizable. For the shake of comparison,
+I used a <code>math/rand</code> <em>RNG</em> without any <em>mutex</em>, so really fast, naive, and
+unsafe for concurrent use, but this could be ok having a separate <em>RNG</em> per
+goroutine or connection, or using a
+<a href="https://golang.org/pkg/sync/#Pool">sync/pool</a>, so it&rsquo;s still a useful
+benchmark.</p>
+
+<h3 id="to-from-string-performance">To/From string performance</h3>
+
+<p>Another typical usage is to marshal/unmarshal <em>UUIDs</em> to/from string, for
+example to save them into text files, logs, or databases.</p>
+
+<p>Let&rsquo;s benchmark the two contenders for this common use case with this
+<a href="files/uuid_string_test.go">code</a>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
+
+  <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
+      <span style="color: #e6db74">&quot;testing&quot;</span>
+
+      <span style="color: #a6e22e">pborman</span> <span style="color: #e6db74">&quot;github.com/pborman/uuid&quot;</span>
+      <span style="color: #a6e22e">satori</span> <span style="color: #e6db74">&quot;github.com/satori/go.uuid&quot;</span>
+  <span style="color: #f8f8f2">)</span>
+
+  <span style="color: #66d9ef">var</span> <span style="color: #f8f8f2">(</span>
+      <span style="color: #a6e22e">pbormanUUID</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewRandom</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #a6e22e">satoriUUID</span>  <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">satori</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewV4</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #a6e22e">UUIDstring</span>  <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">satoriUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+  <span style="color: #f8f8f2">)</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkSatoriToString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">_</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">satoriUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanToString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">_</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">pbormanUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkSatoriFromString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">satori</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">FromString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">UUIDstring</span><span style="color: #f8f8f2">)</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanFromString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Parse</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">UUIDstring</span><span style="color: #f8f8f2">)</span>
+      <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+</pre></div>
+
+<p>Again running with <code>go test uuid_string_test.go -bench=.</code> gives us:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f8f8f2">BenchmarkSatoriToString-8</span>       <span style="color: #ae81ff">20000000</span>            <span style="color: #ae81ff">95.2</span> <span style="color: #f8f8f2">ns/op</span>
+  <span style="color: #f8f8f2">BenchmarkPbormanToString-8</span>      <span style="color: #ae81ff">20000000</span>            <span style="color: #ae81ff">92.0</span> <span style="color: #f8f8f2">ns/op</span>
+  <span style="color: #f8f8f2">BenchmarkSatoriFromString-8</span>     <span style="color: #ae81ff">10000000</span>           <span style="color: #ae81ff">142</span> <span style="color: #f8f8f2">ns/op</span>
+  <span style="color: #f8f8f2">BenchmarkPbormanFromString-8</span>    <span style="color: #ae81ff">20000000</span>            <span style="color: #ae81ff">62.1</span> <span style="color: #f8f8f2">ns/op</span>
+</pre></div>
+
+<p>Seems like parsing an <em>UUID</em> to a string is roughly equivalent, but
+<code>satori/go.uuid</code> is <em>2x</em> slower than <code>pborman/uuid</code> when parsing from a string.</p>
+
+<p>The culprit seems to be the function
+<a href="https://github.com/satori/go.uuid/blob/0aa62d5ddceb50dbcb909d790b5345affd3669b6/uuid.go#L230-L283">UnmarshalText</a>
+which, among other things, supports an extra <em>UUID</em> format, <code>{UUID}</code> (sometimes
+used by <em>Microsoft GUIDs</em>) that <code>pborman/uuid</code>
+<a href="https://github.com/pborman/uuid/blob/5b6ed1dd754eea46be2ec69c6e3f34fd4da85180/uuid.go#L57-L86">Parse</a>
+doesn&rsquo;t, thus doing less work. But, what if we need that format? Using
+<code>pborman/uuid</code> would require code like this:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">withBraceParse</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">s</span> <span style="color: #66d9ef">string</span><span style="color: #f8f8f2">)</span> <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">UUID</span> <span style="color: #f8f8f2">{</span>
+      <span style="color: #66d9ef">if</span> <span style="color: #a6e22e">s</span><span style="color: #f8f8f2">[</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">]</span> <span style="color: #f92672">==</span> <span style="color: #e6db74">&#39;{&#39;</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">s</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">s</span><span style="color: #f8f8f2">[</span><span style="color: #ae81ff">1</span> <span style="color: #f8f8f2">:</span> <span style="color: #f8f8f2">len(</span><span style="color: #a6e22e">s</span><span style="color: #f8f8f2">)</span><span style="color: #f92672">-</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">]</span>
+      <span style="color: #f8f8f2">}</span>
+      <span style="color: #66d9ef">return</span> <span style="color: #a6e22e">pborman</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Parse</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">s</span><span style="color: #f8f8f2">)</span>
+  <span style="color: #f8f8f2">}</span>
+</pre></div>
+
+<p>Which, when benchmarked with this <a href="files/uuid_bracestring_test.go">code</a>
+is still much faster than <code>satori/go.uuid</code> for this operation:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f8f8f2">BenchmarkSatoriFromBraceString-8</span>        <span style="color: #ae81ff">10000000</span>           <span style="color: #ae81ff">135</span> <span style="color: #f8f8f2">ns/op</span>
+  <span style="color: #f8f8f2">BenchmarkPbormanFromBraceString-8</span>       <span style="color: #ae81ff">20000000</span>            <span style="color: #ae81ff">70.2</span> <span style="color: #f8f8f2">ns/op</span>
+</pre></div>
+
+<p>So the need to support that format isn&rsquo;t a selling point for
+<code>satori/go.uuid</code>.</p>
+
+<p>In conclusion, for easy of use, start with <code>satori/go.uuid</code>. However if
+you want more performance or customization, <code>pborman/uuid</code> seems to be
+the way to go.</p>
+
+<h2 id="shortcomings-of-uuid">Shortcomings of UUID.</h2>
+
+<p>While <em>UUID</em> usage is widespread, it isn&rsquo;t without shortcomings:</p>
+
+<ul>
+<li>Sections are hard to parse for a human and are <em>UUID</em> version dependent. If we
+can&rsquo;t directly interpret each section, the dashes on the string representation
+add no value</li>
+<li>If we only care about an unique variant/version, we wouldn&rsquo;t need to encode
+the rest</li>
+<li>Having to support more variants and versions, the parsing and generation is
+slower than it could be</li>
+<li>Version 4, being fully random, produces fragmentation in many data structures,
+and aren&rsquo;t sortable in a meaningful way</li>
+<li>Version 4 are slow to generate, requiring 122 bits of good quality entropy</li>
+<li>It&rsquo;s just not the most efficient way to encode 128 bits into a string. For
+example, <a href="https://en.wikipedia.org/wiki/Base64">base64</a> without padding would
+require 22 characters, not 36</li>
+</ul>
+
+<h2 id="uuid-alternatives">UUID Alternatives</h2>
+
+<p>Tackling <em>UUID</em> shortcomings, while still being simple and random-generated
+<em>UIDs</em>, the most popular alternative is perhaps
+<a href="https://github.com/alizain/ulid">ULID</a>, and a discussion of the format with
+comparison of <em>Golang</em> libraries implementing it will be part three.</p>
+
+<p>Hybrid sequential + random <em>UID</em> systems can offer even better performance by
+reducing the amount of entropy needed for each single <em>UID</em>, at the cost of
+being more complex to setup and operate. A popular system using this schema is
+Twitter&rsquo;s <a href="https://github.com/twitter/snowflake">Snowflake</a>. We&rsquo;ll be discussing
+an <a href="https://github.com/twitter/snowflake">Snowflake</a> alternative,
+<a href="https://github.com/bmizerany/noeqd">noeqd</a>, and it&rsquo;s <em>Golang</em> library, in part
+4.</p>
+
+<h2 id="references">References</h2>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a> Wikipedia article</li>
+<li><a href="https://tools.ietf.org/html/rfc4122">RFC 4122</a> <em>UUID RFC</em> document</li>
+<li><a href="http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/">Managing Syscall Overhead with
+crypto/rand</a>
+is an excellent blog post on how to get better performance from
+<code>crypto/rand</code></li>
+<li><a href="http://blog.sgmansfield.com/2016/01/the-hidden-dangers-of-default-rand/">The hidden dangers of default
+rand</a>
+another excellent post, this time about <code>math/rand</code></li>
+</ul>
+
+  </div>
+  <div id="disqus_thread"></div>
+</div>
+
+
+<script type="text/javascript">
+var disqus_shortname = "antoniomo";
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+
+
+
+<script type="text/javascript">
+    var disqus_shortname = "antoniomo";
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+</body>
+</html>
+
