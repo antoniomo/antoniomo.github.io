@@ -108,7 +108,7 @@ being equal, this could be the deciding factor on which package to use.
 
 ### Generating Performance
 
-For this test we'll be generating random, version 4 *UUID*. We'll use this
+For this test we'll be generating random, version 4 *UUIDs*. We'll use this
 benchmark [code](/files/uuid_generating_test.go):
 
 ```go
