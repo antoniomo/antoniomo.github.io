@@ -27,10 +27,10 @@ Taking a total of 36 characters. The two positions we have marked with `V` and
 The three most significant bits of `V` denote the *UUID* variant. The *RFC*
 specifies 3: 
 
-- Variant 0 is obsolete.
-- Variant 1 is the most commonly used.
+- Variant 0 is obsolete
+- Variant 1 is the most commonly used
 - Variant 2 was used for *GUIDs* in the early Windows versions and is reserved
-  for that.
+  for that
 
 Both V1/V2 are the same except for the `V` value and the
 [endianness](https://en.wikipedia.org/wiki/Endianness) in byte representation,
