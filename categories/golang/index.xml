@@ -126,7 +126,7 @@ being equal, this could be the deciding factor on which package to use.&lt;/p&gt
 &lt;h3 id=&#34;generating-performance&#34;&gt;Generating Performance&lt;/h3&gt;
 
 &lt;p&gt;For this test we&amp;rsquo;ll be generating random, version 4 &lt;em&gt;UUID&lt;/em&gt;. We&amp;rsquo;ll use this
-benchmark &lt;a href=&#34;files/uuid_generating_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
+benchmark &lt;a href=&#34;http://antoniomo.com/files/uuid_generating_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
 
   &lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
@@ -178,7 +178,7 @@ benchmark.&lt;/p&gt;
 example to save them into text files, logs, or databases.&lt;/p&gt;
 
 &lt;p&gt;Let&amp;rsquo;s benchmark the two contenders for this common use case with this
-&lt;a href=&#34;files/uuid_string_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
+&lt;a href=&#34;http://antoniomo.com/files/uuid_string_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
 
   &lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
@@ -244,7 +244,7 @@ doesn&amp;rsquo;t, thus doing less work. But, what if we need that format? Using
   &lt;span style=&#34;color: #f8f8f2&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;p&gt;Which, when benchmarked with this &lt;a href=&#34;files/uuid_bracestring_test.go&#34;&gt;code&lt;/a&gt;
+&lt;p&gt;Which, when benchmarked with this &lt;a href=&#34;http://antoniomo.com/files/uuid_bracestring_test.go&#34;&gt;code&lt;/a&gt;
 is still much faster than &lt;code&gt;satori/go.uuid&lt;/code&gt; for this operation:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkSatoriFromBraceString-8&lt;/span&gt;        &lt;span style=&#34;color: #ae81ff&#34;&gt;10000000&lt;/span&gt;           &lt;span style=&#34;color: #ae81ff&#34;&gt;135&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;
   &lt;span style=&#34;color: #f8f8f2&#34;&gt;BenchmarkPbormanFromBraceString-8&lt;/span&gt;       &lt;span style=&#34;color: #ae81ff&#34;&gt;20000000&lt;/span&gt;            &lt;span style=&#34;color: #ae81ff&#34;&gt;70.2&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ns/op&lt;/span&gt;

@@ -196,7 +196,7 @@ being equal, this could be the deciding factor on which package to use.</p>
 <h3 id="generating-performance">Generating Performance</h3>
 
 <p>For this test we&rsquo;ll be generating random, version 4 <em>UUID</em>. We&rsquo;ll use this
-benchmark <a href="files/uuid_generating_test.go">code</a>:</p>
+benchmark <a href="/files/uuid_generating_test.go">code</a>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
 
   <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
@@ -248,7 +248,7 @@ benchmark.</p>
 example to save them into text files, logs, or databases.</p>
 
 <p>Let&rsquo;s benchmark the two contenders for this common use case with this
-<a href="files/uuid_string_test.go">code</a>:</p>
+<a href="/files/uuid_string_test.go">code</a>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
 
   <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
@@ -314,7 +314,7 @@ doesn&rsquo;t, thus doing less work. But, what if we need that format? Using
   <span style="color: #f8f8f2">}</span>
 </pre></div>
 
-<p>Which, when benchmarked with this <a href="files/uuid_bracestring_test.go">code</a>
+<p>Which, when benchmarked with this <a href="/files/uuid_bracestring_test.go">code</a>
 is still much faster than <code>satori/go.uuid</code> for this operation:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f8f8f2">BenchmarkSatoriFromBraceString-8</span>        <span style="color: #ae81ff">10000000</span>           <span style="color: #ae81ff">135</span> <span style="color: #f8f8f2">ns/op</span>
   <span style="color: #f8f8f2">BenchmarkPbormanFromBraceString-8</span>       <span style="color: #ae81ff">20000000</span>            <span style="color: #ae81ff">70.2</span> <span style="color: #f8f8f2">ns/op</span>
