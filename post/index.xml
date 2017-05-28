@@ -126,7 +126,7 @@ being equal, this could be the deciding factor on which package to use.&lt;/p&gt
 
 &lt;h3 id=&#34;generating-performance&#34;&gt;Generating Performance&lt;/h3&gt;
 
-&lt;p&gt;For this test we&amp;rsquo;ll be generating random, version 4 &lt;em&gt;UUID&lt;/em&gt;. We&amp;rsquo;ll use this
+&lt;p&gt;For this test we&amp;rsquo;ll be generating random, version 4 &lt;em&gt;UUIDs&lt;/em&gt;. We&amp;rsquo;ll use this
 benchmark &lt;a href=&#34;http://antoniomo.com/files/uuid_generating_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
 
