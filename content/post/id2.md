@@ -109,7 +109,7 @@ being equal, this could be the deciding factor on which package to use.
 ### Generating Performance
 
 For this test we'll be generating random, version 4 *UUID*. We'll use this
-benchmark [code](files/uuid_generating_test.go):
+benchmark [code](/files/uuid_generating_test.go):
 
 ```go
   package main
@@ -165,7 +165,7 @@ Another typical usage is to marshal/unmarshal *UUIDs* to/from string, for
 example to save them into text files, logs, or databases.
 
 Let's benchmark the two contenders for this common use case with this
-[code](files/uuid_string_test.go):
+[code](/files/uuid_string_test.go):
 
 ```go
   package main
@@ -237,7 +237,7 @@ doesn't, thus doing less work. But, what if we need that format? Using
   }
 ```
 
-Which, when benchmarked with this [code](files/uuid_bracestring_test.go)
+Which, when benchmarked with this [code](/files/uuid_bracestring_test.go)
 is still much faster than `satori/go.uuid` for this operation:
 
 ```lisp
