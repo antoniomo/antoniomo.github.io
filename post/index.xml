@@ -42,10 +42,10 @@ dashes in this arrangement &lt;code&gt;8-4-4-4-12&lt;/code&gt;, looking like:&lt
 specifies 3:&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;Variant 0 is obsolete.&lt;/li&gt;
-&lt;li&gt;Variant 1 is the most commonly used.&lt;/li&gt;
+&lt;li&gt;Variant 0 is obsolete&lt;/li&gt;
+&lt;li&gt;Variant 1 is the most commonly used&lt;/li&gt;
 &lt;li&gt;Variant 2 was used for &lt;em&gt;GUIDs&lt;/em&gt; in the early Windows versions and is reserved
-for that.&lt;/li&gt;
+for that&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Both V1/V2 are the same except for the &lt;code&gt;V&lt;/code&gt; value and the
