@@ -1,10 +1,10 @@
 +++
 description = "UUIDs discussion and drawbacks"
 title = "Unique IDs in Golang, part 2"
-date = "2017-05-21T09:03:16+03:00"
+date = "2017-05-28T10:09:26+03:00"
 categories = [ "programming", "golang", "uid", "uuid" ]
 keywords = [ "programming", "golang", "uid", "uuid" ]
-draft = true
+draft = false
 +++
 
 > This is a continuing series on *UID* alternatives:
@@ -13,16 +13,38 @@ draft = true
 > - [Part2]({{<relref "post/id2.md">}}) Talks about *UUID* (this post)
 
 *Universal Unique Identifiers (UUID)* are an standard way of generating and
-representing 128-bit numbers to be used as identifiers. The standard [RFC
-4122](https://tools.ietf.org/html/rfc4122) define 5 different ways of generating
-*UUIDs*:
+representing 128-bit numbers to be used as identifiers.
+
+The standard [RFC 4122](https://tools.ietf.org/html/rfc4122) defines a way to
+represent these 128 bits in a string of 32 hexadecimal digits, separated with
+dashes in this arrangement `8-4-4-4-12`, looking like:
+
+`12345678-1234-V234-v234-123456789abc`
+
+Taking a total of 36 characters. The two positions we have marked with `V` and
+`v` in the example have a special meaning:
+
+The three most significant bits of `V` denote the *UUID* variant. The *RFC*
+specifies 3: 
+
+- Variant 0 is obsolete.
+- Variant 1 is the most commonly used.
+- Variant 2 was used for *GUIDs* in the early Windows versions and is reserved
+  for that.
+
+Both V1/V2 are the same except for the `V` value and the
+[endianness](https://en.wikipedia.org/wiki/Endianness) in byte representation,
+Variant 1 uses little-endian, variant 2, big-endian.
+
+The 4 most significant bits of `v` denotes the *UUID* version. Both variants
+support 5 versions of *UUIDs*:
 
 - Type 1 concatenates the unique [MAC
   address](https://en.wikipedia.org/wiki/MAC_address) of the generating node
   with a 60-bit timestamp, corresponding to a single point of time and space and
   thus deemed unique. It's however a security concern as the `MAC` address can
   be traced to the generating node
-- Type 2 is similar to type 1, but the timestamp is truncated to accomodate a
+- Type 2 is similar to type 1, but the timestamp is truncated to accommodate a
   "local domain" number, representing user ids, group ids, or the like. The
   reduced timestamp resolution means that type 2 is not suitable for cases were
   the *UUIDs* are issued per node/domain at a rate exceeding 1 every 7 seconds
@@ -33,9 +55,12 @@ representing 128-bit numbers to be used as identifiers. The standard [RFC
   still not suitable for security credentials
 - Type 4 is completely random with 122 bits of entropy
 
-For these reasons, type 4 is the most flexible, falling in the *Random UID*
-category that we outlined in [part 1]({{<relref "post/id1.md">}}), and we are
-gonna center the discussion on that variant.
+The meaning of each dash-separated section on the string representation varies
+on each version.
+
+Because type 4 is the most flexible, falling in the *Random UID* category that
+we outlined in [part 1]({{<relref "post/id1.md">}}), we are gonna center the
+examples on that version.
 
 ## Golang RNG
 
@@ -56,16 +81,16 @@ Also note that it is possible to use some
 [strategies](http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/)
 to get the most of `crypto/rand`, and that naive usage of `math/rand` [isn't
 optimal](http://blog.sgmansfield.com/2016/01/the-hidden-dangers-of-default-rand/),
-specially in concurrent scenarios, which are the norm in most non-trivial Golang
-projects.
+specially in concurrent scenarios, which are the norm in most non-trivial
+*Golang* projects.
 
 ## Golang *UUID* packages
 
 By far, the most popular package for handling *UUID* in *Golang* is
 [satori/go.uuid](https://github.com/satori/go.uuid), with 1136 stars on *Github*
-at the time of writing. It supports the five *UUID* variants, it's well tested and
-documented. This package uses `crypto/rand` to generate the random bits so it's
-as secure as it can be, but I couldn't see how to specify my own source of
+at the time of writing. It supports the five *UUID* versions, it's well tested
+and documented. This package uses `crypto/rand` to generate the random bits so
+it's as secure as it can be, but I couldn't see how to specify my own source of
 entropy so it's not easy to get more performance if needed.
 
 A contender that is also well tested and RFC-compliant is
@@ -231,9 +256,13 @@ the way to go.
 
 While *UUID* usage is widespread, it isn't without shortcomings:
 
-- Sections are hard to parse for a human. If we can't directly interpret each
-  section, the dashes on the string representation add no value
-- If we only care about 1 variant, we wouldn't need to encode the type
+- Sections are hard to parse for a human and are *UUID* version dependent. If we
+  can't directly interpret each section, the dashes on the string representation
+  add no value
+- If we only care about an unique variant/version, we wouldn't need to encode
+  the rest
+- Having to support more variants and versions, the parsing and generation is
+  slower than it could be
 - Version 4, being fully random, produces fragmentation in many data structures,
   and aren't sortable in a meaningful way
 - Version 4 are slow to generate, requiring 122 bits of good quality entropy
@@ -253,7 +282,8 @@ reducing the amount of entropy needed for each single *UID*, at the cost of
 being more complex to setup and operate. A popular system using this schema is
 Twitter's [Snowflake](https://github.com/twitter/snowflake). We'll be discussing
 an [Snowflake](https://github.com/twitter/snowflake) alternative,
-[noeqd](https://github.com/bmizerany/noeqd), and it's *Golang* library in part 4.
+[noeqd](https://github.com/bmizerany/noeqd), and it's *Golang* library, in part
+4.
 
 ## References
 
