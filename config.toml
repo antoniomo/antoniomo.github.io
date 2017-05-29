@@ -29,7 +29,7 @@ pygmentsStyle = "monokai"
 
 	# Used when a given page doesn't set its own.
 	defaultDescription = ""
-	defaultKeywords = "antonio,website,blog"
+	defaultKeywords = "antoniomo,website,blog"
 
 	# Hide estimated reading time for posts.
 	# Default (if omitted) is false.
