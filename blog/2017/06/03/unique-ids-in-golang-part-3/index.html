@@ -206,7 +206,7 @@ goroutine</a>,
 thus achieving very fast lock-free concurrent <em>ULID</em> generation.</p>
 
 <p>Benchmarking these against <code>pborman/uuid</code> with this
-<a href="/files/id3/uuid_generating_test.go">code</a>:</p>
+<a href="/files/id3/ulid_generating_test.go">code</a>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
 
   <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
@@ -269,7 +269,7 @@ converting it to milliseconds isn&rsquo;t free, and overall it&rsquo;s on the sa
 <p>As for to/from string format, I was surprised to find that <code>imdario/go-ulid</code>
 doesn&rsquo;t parse the <em>ULID</em> string representation, so we can only test the
 to-string functionality. Benchmarking with this
-<a href="/files/id3/uuid_string_test.go">code</a>:</p>
+<a href="/files/id3/ulid_string_test.go">code</a>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
 
   <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>

@@ -127,7 +127,7 @@ goroutine&lt;/a&gt;,
 thus achieving very fast lock-free concurrent &lt;em&gt;ULID&lt;/em&gt; generation.&lt;/p&gt;
 
 &lt;p&gt;Benchmarking these against &lt;code&gt;pborman/uuid&lt;/code&gt; with this
-&lt;a href=&#34;http://antoniomo.com/files/id3/uuid_generating_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
+&lt;a href=&#34;http://antoniomo.com/files/id3/ulid_generating_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
 
   &lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
@@ -190,7 +190,7 @@ converting it to milliseconds isn&amp;rsquo;t free, and overall it&amp;rsquo;s o
 &lt;p&gt;As for to/from string format, I was surprised to find that &lt;code&gt;imdario/go-ulid&lt;/code&gt;
 doesn&amp;rsquo;t parse the &lt;em&gt;ULID&lt;/em&gt; string representation, so we can only test the
 to-string functionality. Benchmarking with this
-&lt;a href=&#34;http://antoniomo.com/files/id3/uuid_string_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
+&lt;a href=&#34;http://antoniomo.com/files/id3/ulid_string_test.go&#34;&gt;code&lt;/a&gt;:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;  &lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;
 
   &lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;(&lt;/span&gt;
