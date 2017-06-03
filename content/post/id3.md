@@ -111,7 +111,7 @@ goroutine](https://github.com/oklog/oklog/blob/649df40982d338faf87e294a3e9bcad80
 thus achieving very fast lock-free concurrent *ULID* generation.
 
 Benchmarking these against `pborman/uuid` with this
-[code](/files/id3/uuid_generating_test.go):
+[code](/files/id3/ulid_generating_test.go):
 
 ```go
   package main
@@ -178,7 +178,7 @@ converting it to milliseconds isn't free, and overall it's on the same ballpark.
 As for to/from string format, I was surprised to find that `imdario/go-ulid`
 doesn't parse the *ULID* string representation, so we can only test the
 to-string functionality. Benchmarking with this
-[code](/files/id3/uuid_string_test.go):
+[code](/files/id3/ulid_string_test.go):
 
 ```go
   package main
