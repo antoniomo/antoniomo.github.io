@@ -34,7 +34,7 @@ The way it attempts to solve *UUID* issues are:
   produce less fragmentation than *UUIDs* in many data structures
 
 The string representation is thus (copied from the
-[oklog](https://github.com/oklog/ulid) documentation):
+[oklog/ulid](https://github.com/oklog/ulid) documentation):
 
 ```lisp
    01AN4Z07BY      79KA1307SR9X4MV3
