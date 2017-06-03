@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Unique IDs in Golang, part 3 &middot; AntonioMO</title>
+
+  
+  <link rel="stylesheet" href="http://antoniomo.com/css/poole.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/poole-overrides.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde-overrides.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/hyde-x.css">
+  <link rel="stylesheet" href="http://antoniomo.com/css/override.css">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://antoniomo.com/touch-icon-144-precomposed.png">
+  <link href="http://antoniomo.com/favicon.png" rel="icon">
+
+  
+  
+  
+  
+
+  <meta name="description" content="The ULID ID format">
+  <meta name="keywords" content="programming,golang,uid,uuid">
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-100005206-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+</head>
+<body class="theme-base-08">
+<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      
+        <img src="https://www.gravatar.com/avatar/3c5ee5663d8001726a4f6e397f5c5e77?s=200"
+             alt="gravatar" title="AntonioMO">
+      
+      <h1>AntonioMO</h1>
+      <p class="lead">Learning stuff around, being myself :)</p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item"><a href="http://antoniomo.com/">Blog</a></li>
+      
+      <li class="sidebar-nav-item"><a href="/about/">About Me</a></li>
+      
+    </ul>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+      <a href="https://github.com/antoniomo"><i class="fa fa-github-square fa-3x"></i></a>
+      
+      <a href="https://stackoverflow.com/users/189138/antoniomo"><i class="fa fa-stack-overflow fa-3x"></i></a>
+      <a href="https://www.linkedin.com/in/antoniomo/"><i class="fa fa-linkedin-square fa-3x"></i></a>
+      
+      
+      <a href="https://twitter.com/AMaciasOjeda"><i class="fa fa-twitter-square fa-3x"></i></a>
+      
+      
+      <a href="http://antoniomo.com/index.xml" type="application/rss+xml"><i class="fa fa-rss-square fa-3x"></i></a>
+      </li>
+    </ul>
+
+    
+
+    <p>Copyright &copy; 2017 <a href="http://antoniomo.com/license/">License</a><br/>
+       Powered by <a href="http://gohugo.io">Hugo</a> and <a href="https://github.com/zyro/hyde-x">Hyde-X</a></p>
+  </div>
+</div>
+
+
+<div class="content container">
+  <div class="post">
+    <h1 class="post-title">Unique IDs in Golang, part 3</h1>
+    <span class="post-date">Jun 3, 2017 &middot; 7 minute read &middot; <a href="http://antoniomo.com/blog/2017/06/03/unique-ids-in-golang-part-3/#disqus_thread">Comments</a>
+    
+    <br/>
+    <a class="label" href="http://antoniomo.com/categories/programming">programming</a><a class="label" href="http://antoniomo.com/categories/golang">golang</a><a class="label" href="http://antoniomo.com/categories/uid">uid</a><a class="label" href="http://antoniomo.com/categories/uuid">uuid</a>
+    </span>
+    
+
+<blockquote>
+<p>This is a continuing series on <em>UID</em> alternatives:</p>
+
+<ul>
+<li><a href="/blog/2017/05/21/unique-ids-in-golang-part-1/">Part1</a> Introduces the topic</li>
+<li><a href="/blog/2017/05/28/unique-ids-in-golang-part-2/">Part2</a> Talks about <em>UUID</em></li>
+<li><a href="/blog/2017/06/03/unique-ids-in-golang-part-3/">Part3</a> Talks about <em>ULID</em> (this post)</li>
+</ul>
+</blockquote>
+
+<p>As we saw on the <a href="/blog/2017/05/28/unique-ids-in-golang-part-2/">second part</a>, <em>UUIDs</em> aren&rsquo;t
+without shortcomings. An alternative that tries to tackle some of these, while
+still keeping some of the advantages of both <em>UUIDs</em> versions 1 and 4 are
+<a href="https://github.com/alizain/ulid">ULIDs</a>.</p>
+
+<p>The way it attempts to solve <em>UUID</em> issues are:</p>
+
+<ul>
+<li>No separate versions/variants, a single format to parse and generate</li>
+<li>128 bits length, like <em>UUID</em>, but without the need to encode variant and
+version, all of that is <em>ID</em> information</li>
+<li><a href="http://www.crockford.com/wrmg/base32.html">Crockford&rsquo;s base32</a> encoding. This
+means the 128 bits can be encoded in a 26 character&rsquo;s string, that it&rsquo;s
+url-safe and easy for humans to read and communicate, as it&rsquo;s all numbers and
+uppercase letters, no special characters. Much more compact than <em>UUID&rsquo;s</em> 36
+characters as well</li>
+<li>80 bits of randomness</li>
+<li>48 bits of timestamp (UNIX-time in milliseconds), lasts until 10895 AD</li>
+<li>Timestamp goes first, which means <em>ULIDs</em> are roughly time-sortable and
+produce less fragmentation than <em>UUIDs</em> in many data structures</li>
+</ul>
+
+<p>The string representation is thus (copied from the
+<a href="https://github.com/oklog/ulid">oklog</a> documentation):</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   <span style="color: #f8f8f2">01AN4Z07BY</span>      <span style="color: #f8f8f2">79KA1307SR9X4MV3</span>
+  <span style="color: #f8f8f2">|----------|</span>    <span style="color: #f8f8f2">|----------------|</span>
+   <span style="color: #f8f8f2">Timestamp</span>           <span style="color: #f8f8f2">Entropy</span>
+    <span style="color: #ae81ff">10</span> <span style="color: #f8f8f2">chars</span>           <span style="color: #ae81ff">16</span> <span style="color: #f8f8f2">chars</span>
+    <span style="color: #ae81ff">48</span> <span style="color: #f8f8f2">bits</span>            <span style="color: #ae81ff">80</span> <span style="color: #f8f8f2">bits</span>
+     <span style="color: #f8f8f2">base32</span>             <span style="color: #f8f8f2">base32</span>
+</pre></div>
+
+<p>So in a way, it mixes the timestamp properties of <em>UUID</em> versions 1 and 2, with
+better time resolution than version 2, and swapping the unreliable and insecure
+<em>MAC</em> address of it for 80 bits of randomness <em>a-la</em> <em>UUID</em> version 4. Is this
+good enough? Let&rsquo;s find out!</p>
+
+<h2 id="strength">Strength</h2>
+
+<p>How improbable is to generate a collision with <em>ULIDs</em>? Well for each
+millisecond, we have 80 bits of randomness, which equals to a space of <code>$2^{80}
+\approx 1.21\times10^{24}$</code> different <em>ULIDs</em> per millisecond. Of course, here
+<em>millisecond</em> means <em>roughly</em> a millisecond, specially with <em>ULIDs</em> being
+generated on different nodes with clock drift and
+<a href="ihttps://en.wikipedia.org/wiki/Network_Time_Protocol">NTP</a> to adjust their
+clocks. A discussion of that is beyond the scope of this article, so just check
+<a href="http://book.mixu.net/distsys/time.html">this</a> reference if you are interested.
+Here we are gonna consider it close enough to a real millisecond to ignore these
+matters :).</p>
+
+<p>We can calculate the probability of a collision within a millisecond using the
+approach to solve the <a href="https://en.wikipedia.org/wiki/Birthday_problem">birthday
+problem</a>:</p>
+
+<div>
+$$\sqrt{2\times2^{80} \times \ln \frac{1}{1-p}}$$
+</div>
+
+<p>were <code>$p$</code> is the approximate probability to find a collision. So if we want to
+have <code>$1/1,000,000,000$</code> (1 in a billion) probability of a <em>ULID</em> collision, we
+have to generate:</p>
+
+<div>
+$$\sqrt{2\times2^{80} \times \ln \frac{1}{1-\frac{1}{1,000,000,000}}} \approx
+4.92 \times 10^{7}$$
+</div>
+
+<p>So we have to generate over 49 million <em>ULIDs</em> in a single millisecond to have a
+1 in a billion probability of a collision. Seems good enough to me.</p>
+
+<h2 id="golang-libraries-and-benchmarks">Golang libraries and benchmarks</h2>
+
+<p>So, what do we have in Golang to tap on this <em>ULID</em> goodness? There seem to be
+two main alternatives:</p>
+
+<ul>
+<li><a href="https://github.com/oklog/ulid">oklog/ulid</a> 803 github stars at this moment,
+maintained as part of the <a href="https://github.com/oklog/oklog">oklog/oklog</a>
+project</li>
+<li><a href="https://github.com/imdario/go-ulid">imdario/go-ulid</a> 14 stars when writing
+this, no recent changes</li>
+</ul>
+
+<p>As with the <em>UUID</em> alternatives, normally (or in case of doubt) we would want to
+use <code>crypto/rand</code> as the entropy source of these, and this is indeed the default
+of <code>imdario/go-ulid</code>. There seems to be a provision to perhaps change the random
+source
+<a href="https://github.com/imdario/go-ulid/blob/80e2735d1c2c2b1d963bccaa2306f67e5f8d5da9/ulid.go#L22">though</a>
+but apparently it ended up not being implemented, so <code>imdario/go-ulid</code> just uses
+<code>crypto/rand</code> in an easy to use but not configurable way.</p>
+
+<p>In comparison, <code>oklog/ulid</code> takes the total opposite approach, letting the user
+specify both the time and source of entropy. Thus the user has a higher burden
+on usage, but can fine-tune it for his application. For example the parent
+project, <code>oklog/oklog</code>, uses a separate <code>math/rand</code> RNG generator
+<a href="https://github.com/oklog/oklog/blob/649df40982d338faf87e294a3e9bcad80f34f6a9/pkg/ingest/conn.go#L48-L51">per-connection handling
+goroutine</a>,
+thus achieving very fast lock-free concurrent <em>ULID</em> generation.</p>
+
+<p>Benchmarking these against <code>pborman/uuid</code> with this
+<a href="/files/id3/uuid_generating_test.go">code</a>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
+
+  <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
+          <span style="color: #a6e22e">crand</span> <span style="color: #e6db74">&quot;crypto/rand&quot;</span>
+          <span style="color: #a6e22e">mrand</span> <span style="color: #e6db74">&quot;math/rand&quot;</span>
+          <span style="color: #e6db74">&quot;testing&quot;</span>
+
+          <span style="color: #a6e22e">imdarioULID</span> <span style="color: #e6db74">&quot;github.com/imdario/go-ulid&quot;</span>
+          <span style="color: #a6e22e">oklogULID</span> <span style="color: #e6db74">&quot;github.com/oklog/ulid&quot;</span>
+          <span style="color: #a6e22e">pbormanUUID</span> <span style="color: #e6db74">&quot;github.com/pborman/uuid&quot;</span>
+  <span style="color: #f8f8f2">)</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanUUIDV4</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">pbormanUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewRandom</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkImdarioULID</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">imdarioULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">New</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkOklogULID</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">MustNew</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Now</span><span style="color: #f8f8f2">(),</span> <span style="color: #a6e22e">crand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Reader</span><span style="color: #f8f8f2">)</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanUUIDV4MathRand</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">rsource</span> <span style="color: #f92672">:=</span> <span style="color: #a6e22e">mrand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">New</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">mrand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewSource</span><span style="color: #f8f8f2">(</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">))</span> <span style="color: #75715e">// Unsafe concurrent use!</span>
+          <span style="color: #a6e22e">pbormanUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">SetRand</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">rsource</span><span style="color: #f8f8f2">)</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">pbormanUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewRandom</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkOklogULIDMathRand</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #a6e22e">rsource</span> <span style="color: #f92672">:=</span> <span style="color: #a6e22e">mrand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">New</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">mrand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewSource</span><span style="color: #f8f8f2">(</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">))</span> <span style="color: #75715e">// Unsafe concurrent use!</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">MustNew</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Now</span><span style="color: #f8f8f2">(),</span> <span style="color: #a6e22e">rsource</span><span style="color: #f8f8f2">)</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+</pre></div>
+
+<p>We get:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">BenchmarkPbormanUUIDV4-8</span>           	 <span style="color: #f8f8f2">3000000</span>	       <span style="color: #ae81ff">493</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkImdarioULID-8</span>             	 <span style="color: #f8f8f2">3000000</span>	       <span style="color: #ae81ff">527</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkOklogULID-8</span>               	 <span style="color: #f8f8f2">3000000</span>	       <span style="color: #ae81ff">508</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkPbormanUUIDV4MathRand-8</span>   	<span style="color: #f8f8f2">20000000</span>	        <span style="color: #ae81ff">72.3</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkOklogULIDMathRand-8</span>       	<span style="color: #f8f8f2">20000000</span>	        <span style="color: #ae81ff">84.9</span> <span style="color: #f8f8f2">ns/op</span>
+</pre></div>
+
+<p>We get that <code>pborman/uuid</code> is a bit faster than <code>oklog/ulid</code> on similar
+conditions. This was counterintuitive for me, as <em>ULIDs</em> require less entropy
+(80 bits) than <em>UUIDs V4</em> (122 bits). Anyway, getting the current time and
+converting it to milliseconds isn&rsquo;t free, and overall it&rsquo;s on the same ballpark.</p>
+
+<p>As for to/from string format, I was surprised to find that <code>imdario/go-ulid</code>
+doesn&rsquo;t parse the <em>ULID</em> string representation, so we can only test the
+to-string functionality. Benchmarking with this
+<a href="/files/id3/uuid_string_test.go">code</a>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #f92672">package</span> <span style="color: #a6e22e">main</span>
+
+  <span style="color: #f92672">import</span> <span style="color: #f8f8f2">(</span>
+          <span style="color: #e6db74">&quot;crypto/rand&quot;</span>
+          <span style="color: #e6db74">&quot;testing&quot;</span>
+
+          <span style="color: #a6e22e">imdarioULID</span> <span style="color: #e6db74">&quot;github.com/imdario/go-ulid&quot;</span>
+          <span style="color: #a6e22e">oklogULID</span> <span style="color: #e6db74">&quot;github.com/oklog/ulid&quot;</span>
+          <span style="color: #a6e22e">pbormanUUID</span> <span style="color: #e6db74">&quot;github.com/pborman/uuid&quot;</span>
+  <span style="color: #f8f8f2">)</span>
+
+  <span style="color: #66d9ef">var</span> <span style="color: #f8f8f2">(</span>
+          <span style="color: #a6e22e">UUID</span>        <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">pbormanUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">NewRandom</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #a6e22e">UUIDstring</span>  <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">UUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #a6e22e">ULIDimdario</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">imdarioULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">New</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #a6e22e">ULIDoklog</span>   <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">MustNew</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Now</span><span style="color: #f8f8f2">(),</span> <span style="color: #a6e22e">rand</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Reader</span><span style="color: #f8f8f2">)</span>
+          <span style="color: #a6e22e">ULIDstring</span>  <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">imdarioULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">New</span><span style="color: #f8f8f2">().</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+  <span style="color: #f8f8f2">)</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanUUIDToString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">_</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">UUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkImdarioULIDToString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">_</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">ULIDimdario</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkOklogULIDToString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">_</span> <span style="color: #f8f8f2">=</span> <span style="color: #a6e22e">ULIDoklog</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">String</span><span style="color: #f8f8f2">()</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkPbormanUUIDFromString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">pbormanUUID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">Parse</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">UUIDstring</span><span style="color: #f8f8f2">)</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+
+  <span style="color: #66d9ef">func</span> <span style="color: #a6e22e">BenchmarkOklogUlidFromString</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">b</span> <span style="color: #f92672">*</span><span style="color: #a6e22e">testing</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">B</span><span style="color: #f8f8f2">)</span> <span style="color: #f8f8f2">{</span>
+          <span style="color: #66d9ef">for</span> <span style="color: #a6e22e">i</span> <span style="color: #f92672">:=</span> <span style="color: #ae81ff">0</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span> <span style="color: #f8f8f2">&lt;</span> <span style="color: #a6e22e">b</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">N</span><span style="color: #f8f8f2">;</span> <span style="color: #a6e22e">i</span><span style="color: #f92672">++</span> <span style="color: #f8f8f2">{</span>
+                  <span style="color: #a6e22e">oklogULID</span><span style="color: #f8f8f2">.</span><span style="color: #a6e22e">MustParse</span><span style="color: #f8f8f2">(</span><span style="color: #a6e22e">ULIDstring</span><span style="color: #f8f8f2">)</span>
+          <span style="color: #f8f8f2">}</span>
+  <span style="color: #f8f8f2">}</span>
+</pre></div>
+
+<p>Shows:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">BenchmarkPbormanUUIDToString-8</span>     	<span style="color: #f8f8f2">20000000</span>	        <span style="color: #ae81ff">91.9</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkImdarioULIDToString-8</span>     	<span style="color: #f8f8f2">20000000</span>	        <span style="color: #ae81ff">83.7</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkOklogULIDToString-8</span>       	<span style="color: #f8f8f2">20000000</span>	        <span style="color: #ae81ff">72.2</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkPbormanUUIDFromString-8</span>   	<span style="color: #f8f8f2">20000000</span>	        <span style="color: #ae81ff">62.1</span> <span style="color: #f8f8f2">ns/op</span>
+<span style="color: #f8f8f2">BenchmarkOklogUlidFromString-8</span>     	<span style="color: #f8f8f2">50000000</span>	        <span style="color: #ae81ff">28.1</span> <span style="color: #f8f8f2">ns/op</span>
+</pre></div>
+
+<p>We can see that having a single format to parse really pays off. It&rsquo;s also
+noteworthy that generating an <em>ULID</em> in string representation is roughly the
+same than generating an <em>UUID</em> string, as it is the sum of generation plus
+converting to a string.</p>
+
+<p>As to which <em>Golang</em> package to use for <em>ULID</em> handling, <code>oklog/ulid</code> is the
+clear choice, being much more flexible and featureful. That&rsquo;s normal, being the
+newer and better maintained package.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p><em>ULIDs</em> try to tackle <em>UUID</em> shortcomings in a variety of ways. In the end, what
+they bring to the table is a much more efficient string representation,
+both in terms of size (26 versus 36 characters), human readability, and
+parse/generation performance. They also have the propriety of being roughly
+sortable to the millisecond, which can be very useful, prevents fragmentation,
+and provides extra information &ldquo;for free&rdquo;.</p>
+
+<p>Considering that generating an <em>ULID</em> in string format costs about the same as
+the <em>UUID V4</em> alternative, the sortable property, and the much more compact
+representation, while still being easy to use, I found myself using <code>oklog/ulid</code>
+quite a bit.</p>
+
+<p>Hybrid sequential + random <em>UID</em> systems can offer even better performance by
+reducing the amount of entropy needed for each single <em>UID</em>, at the cost of
+being more complex to setup and operate. A popular system using this schema is
+Twitter&rsquo;s <a href="https://github.com/twitter/snowflake">Snowflake</a>. We&rsquo;ll be discussing
+an <a href="https://github.com/twitter/snowflake">Snowflake</a> alternative,
+<a href="https://github.com/bmizerany/noeqd">noeqd</a>, and it&rsquo;s <em>Golang</em> library, in part
+4.</p>
+
+<h2 id="references">References</h2>
+
+<ul>
+<li><a href="https://github.com/alizain/ulid">ULID</a> Original <em>ULID</em> implementation and
+specification</li>
+<li><a href="http://www.crockford.com/wrmg/base32.html">Crockford&rsquo;s base32</a> Article</li>
+<li>[Birthday problem)[<a href="https://en.wikipedia.org/wiki/Birthday_problem">https://en.wikipedia.org/wiki/Birthday_problem</a>] Wikipedia
+article</li>
+<li><a href="https://en.wikipedia.org/wiki/Network_Time_Protocol">Network Time Protocol</a>
+Wikipedia article</li>
+<li><a href="http://book.mixu.net/distsys/time.html">Distributed Systems for Fun and
+Profit</a> Good time and order discussion</li>
+<li><a href="http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/">Managing Syscall Overhead with
+crypto/rand</a>
+is an excellent blog post on how to get better performance from <code>crypto/rand</code></li>
+<li><a href="http://blog.sgmansfield.com/2016/01/the-hidden-dangers-of-default-rand/">The hidden dangers of default
+rand</a>
+another excellent post, this time about <code>math/rand</code></li>
+</ul>
+
+<script type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+
+  </div>
+  <div id="disqus_thread"></div>
+</div>
+
+
+<script type="text/javascript">
+var disqus_shortname = "antoniomo";
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+
+
+
+<script type="text/javascript">
+    var disqus_shortname = "antoniomo";
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+</body>
+</html>
+
