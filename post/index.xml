@@ -50,7 +50,7 @@ produce less fragmentation than &lt;em&gt;UUIDs&lt;/em&gt; in many data structur
 &lt;/ul&gt;
 
 &lt;p&gt;The string representation is thus (copied from the
-&lt;a href=&#34;https://github.com/oklog/ulid&#34;&gt;oklog&lt;/a&gt; documentation):&lt;/p&gt;
+&lt;a href=&#34;https://github.com/oklog/ulid&#34;&gt;oklog/ulid&lt;/a&gt; documentation):&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;   &lt;span style=&#34;color: #f8f8f2&#34;&gt;01AN4Z07BY&lt;/span&gt;      &lt;span style=&#34;color: #f8f8f2&#34;&gt;79KA1307SR9X4MV3&lt;/span&gt;
   &lt;span style=&#34;color: #f8f8f2&#34;&gt;|----------|&lt;/span&gt;    &lt;span style=&#34;color: #f8f8f2&#34;&gt;|----------------|&lt;/span&gt;
    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Timestamp&lt;/span&gt;           &lt;span style=&#34;color: #f8f8f2&#34;&gt;Entropy&lt;/span&gt;
