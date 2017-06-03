@@ -277,7 +277,7 @@ an [Snowflake](https://github.com/twitter/snowflake) alternative,
 - [ULID](https://github.com/alizain/ulid) Original *ULID* implementation and
   specification
 - [Crockford's base32](http://www.crockford.com/wrmg/base32.html) Article
-- [Birthday problem)[https://en.wikipedia.org/wiki/Birthday_problem] Wikipedia
+- [Birthday problem](https://en.wikipedia.org/wiki/Birthday_problem) Wikipedia
   article
 - [Network Time Protocol](https://en.wikipedia.org/wiki/Network_Time_Protocol)
   Wikipedia article
