@@ -14,9 +14,9 @@ draft = false
 > - [Part3]({{<relref "post/id3.md">}}) Talks about *ULID* (this post)
 
 As we saw on the [second part]({{<relref "post/id2.md">}}), *UUIDs* aren't
-without shortcomings. An alternative that tries to tackle some of these, while
-still keeping some of the advantages of both *UUIDs* versions 1 and 4 are
-[ULIDs](https://github.com/alizain/ulid).
+without shortcomings. An alternative, [ULIDs](https://github.com/alizain/ulid),
+tries to tackle some of these, while still keeping some of the advantages of
+both *UUIDs* versions 1 and 4.
 
 The way it attempts to solve *UUID* issues are:
 
