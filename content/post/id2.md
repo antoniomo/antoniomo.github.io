@@ -11,6 +11,7 @@ draft = false
 
 > - [Part1]({{<relref "post/id1.md">}}) Introduces the topic
 > - [Part2]({{<relref "post/id2.md">}}) Talks about *UUID* (this post)
+> - [Part3]({{<relref "post/id3.md">}}) Talks about *ULID*
 
 *Universal Unique Identifiers (UUID)* are an standard way of generating and
 representing 128-bit numbers to be used as identifiers.
@@ -109,7 +110,7 @@ being equal, this could be the deciding factor on which package to use.
 ### Generating Performance
 
 For this test we'll be generating random, version 4 *UUIDs*. We'll use this
-benchmark [code](/files/uuid_generating_test.go):
+benchmark [code](/files/id2/uuid_generating_test.go):
 
 ```go
   package main
@@ -165,7 +166,7 @@ Another typical usage is to marshal/unmarshal *UUIDs* to/from string, for
 example to save them into text files, logs, or databases.
 
 Let's benchmark the two contenders for this common use case with this
-[code](/files/uuid_string_test.go):
+[code](/files/id2/uuid_string_test.go):
 
 ```go
   package main
@@ -237,7 +238,7 @@ doesn't, thus doing less work. But, what if we need that format? Using
   }
 ```
 
-Which, when benchmarked with this [code](/files/uuid_bracestring_test.go)
+Which, when benchmarked with this [code](/files/id2/uuid_bracestring_test.go)
 is still much faster than `satori/go.uuid` for this operation:
 
 ```lisp
@@ -275,7 +276,8 @@ While *UUID* usage is widespread, it isn't without shortcomings:
 Tackling *UUID* shortcomings, while still being simple and random-generated
 *UIDs*, the most popular alternative is perhaps
 [ULID](https://github.com/alizain/ulid), and a discussion of the format with
-comparison of *Golang* libraries implementing it will be part three.
+comparison of *Golang* libraries implementing forms [part three]({{<relref
+"post/id3.md">}}).
 
 Hybrid sequential + random *UID* systems can offer even better performance by
 reducing the amount of entropy needed for each single *UID*, at the cost of

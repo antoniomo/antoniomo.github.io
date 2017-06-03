@@ -10,6 +10,7 @@ description = "Introduction and sequential UIDs"
 
 >- [Part1]({{<relref "post/id1.md">}}) Introduces the topic (this post)
 >- [Part2]({{<relref "post/id2.md">}}) Talks about *UUID*
+> - [Part3]({{<relref "post/id3.md">}}) Talks about *ULID*
 
 Whenever we deal with entities in a software system, from user accounts to blog
 posts, or even to generate a database key, it's common to want to be able to
