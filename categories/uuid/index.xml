@@ -27,9 +27,9 @@
 &lt;/blockquote&gt;
 
 &lt;p&gt;As we saw on the &lt;a href=&#34;http://antoniomo.com/blog/2017/05/28/unique-ids-in-golang-part-2/&#34;&gt;second part&lt;/a&gt;, &lt;em&gt;UUIDs&lt;/em&gt; aren&amp;rsquo;t
-without shortcomings. An alternative that tries to tackle some of these, while
-still keeping some of the advantages of both &lt;em&gt;UUIDs&lt;/em&gt; versions 1 and 4 are
-&lt;a href=&#34;https://github.com/alizain/ulid&#34;&gt;ULIDs&lt;/a&gt;.&lt;/p&gt;
+without shortcomings. An alternative, &lt;a href=&#34;https://github.com/alizain/ulid&#34;&gt;ULIDs&lt;/a&gt;,
+tries to tackle some of these, while still keeping some of the advantages of
+both &lt;em&gt;UUIDs&lt;/em&gt; versions 1 and 4.&lt;/p&gt;
 
 &lt;p&gt;The way it attempts to solve &lt;em&gt;UUID&lt;/em&gt; issues are:&lt;/p&gt;
 
