@@ -2,8 +2,8 @@
 description = "The ULID ID format"
 title = "Unique IDs in Golang, part 3"
 date = "2017-06-03T08:15:09+03:00"
-categories = [ "programming", "golang", "uid", "uuid" ]
-keywords = [ "programming", "golang", "uid", "uuid" ]
+categories = [ "programming", "golang", "uid", "uuid", "ulid" ]
+keywords = [ "programming", "golang", "uid", "uuid", "ulid" ]
 draft = false
 +++
 
